@@ -16,6 +16,8 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * Сетевой транспорт телеметрии на базе MQTT для приёма mesh-пакетов (ТЗ §4.1, §14, §19).
  */
@@ -28,6 +30,7 @@ public class MqttTransportManager {
     private String hierarchyPath = "7F10/21A0";
 
     private final TelemetryRepository repository;
+    private final AtomicLong commandSequence = new AtomicLong(1L);
     private MqttClient mqttClient;
     private boolean isConnecting = false;
 
@@ -193,17 +196,19 @@ public class MqttTransportManager {
         );
 
         try {
+            long nextSequence = commandSequence.getAndIncrement();
             long currentTimestamp = System.currentTimeMillis() / 1000L;
-            
+            long deviceSerial = (sourceId != 0L) ? sourceId : 99881100L;
+
             LMashPayload payload = LMashPayload.createCommand(
-                    currentTimestamp, // sequence (simplified for MVP)
-                    currentTimestamp, // timestamp
-                    0L, // deviceSerial (omitted for phone)
+                    nextSequence,
+                    currentTimestamp,
+                    deviceSerial,
                     sourceId,
                     command.getTargetUserId(),
-                    LMashPayload.CMD_HOLD // Example command type
+                    LMashPayload.CMD_HOLD
             );
-            
+
             payload.setLatitudeE7((int) (command.getLatitude() * 1e7));
             payload.setLongitudeE7((int) (command.getLongitude() * 1e7));
 
@@ -212,7 +217,7 @@ public class MqttTransportManager {
             message.setRetained(false);
 
             mqttClient.publish(topic, message);
-            Log.i(TAG, "Бинарная команда отправлена в топик: " + topic);
+            Log.i(TAG, "Бинарная команда отправлена в топик: " + topic + " (seq=" + nextSequence + ", serial=" + deviceSerial + ")");
             return true;
         } catch (Exception e) {
             Log.e(TAG, "Ошибка отправки команды", e);
