@@ -632,7 +632,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             currentAlertUserId = alert.userId;
             bannerEmergency.setVisibility(View.VISIBLE);
             textEmergencyTitle.setText("ТРЕВОГА: БОЕЦ [" + alert.userId + "] • " + alert.reason);
-            triggerTactileAlert();
+            if (alert.isNewAlert) {
+                triggerTactileAlert();
+            }
         } else if (!alertManager.hasActiveCriticalAlert()) {
             bannerEmergency.setVisibility(View.GONE);
             currentAlertUserId = null;

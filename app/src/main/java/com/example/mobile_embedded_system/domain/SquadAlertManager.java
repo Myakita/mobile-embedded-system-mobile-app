@@ -14,11 +14,17 @@ public class SquadAlertManager {
         public final long userId;
         public final String reason;
         public final long timestampMs;
+        public final boolean isNewAlert;
 
-        public AlertInfo(long userId, String reason, long timestampMs) {
+        public AlertInfo(long userId, String reason, long timestampMs, boolean isNewAlert) {
             this.userId = userId;
             this.reason = reason;
             this.timestampMs = timestampMs;
+            this.isNewAlert = isNewAlert;
+        }
+
+        public AlertInfo(long userId, String reason, long timestampMs) {
+            this(userId, reason, timestampMs, true);
         }
     }
 
@@ -33,6 +39,7 @@ public class SquadAlertManager {
             return null;
         }
 
+        TacticalStatusEvaluator.Status previousStatus = previousStatuses.get(entity.userId);
         TacticalStatusEvaluator.Status currentStatus = TacticalStatusEvaluator.evaluate(
                 entity.pulseBpm,
                 entity.temperatureCelsius
@@ -41,8 +48,9 @@ public class SquadAlertManager {
         previousStatuses.put(entity.userId, currentStatus);
 
         if (currentStatus == TacticalStatusEvaluator.Status.CRITICAL) {
+            boolean isNewAlert = (previousStatus != TacticalStatusEvaluator.Status.CRITICAL);
             String reason = formatCriticalReason(entity.pulseBpm, entity.temperatureCelsius);
-            return new AlertInfo(entity.userId, reason, entity.receivedAtMs);
+            return new AlertInfo(entity.userId, reason, entity.receivedAtMs, isNewAlert);
         }
 
         return null;
