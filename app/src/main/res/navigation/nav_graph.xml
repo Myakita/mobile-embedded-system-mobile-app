@@ -8,6 +8,36 @@
     <fragment
         android:id="@+id/mapFragment"
         android:name="com.example.mobile_embedded_system.ui.MapFragment"
-        android:label="MapFragment"
+        android:label="Карта"
         tools:layout="@layout/fragment_map" />
+
+    <fragment
+        android:id="@+id/usersFragment"
+        android:name="com.example.mobile_embedded_system.ui.UsersFragment"
+        android:label="Состав"
+        tools:layout="@layout/fragment_users" />
+
+    <fragment
+        android:id="@+id/hierarchyFragment"
+        android:name="com.example.mobile_embedded_system.ui.HierarchyFragment"
+        android:label="Иерархия"
+        tools:layout="@layout/fragment_hierarchy" />
+
+    <fragment
+        android:id="@+id/devicesFragment"
+        android:name="com.example.mobile_embedded_system.ui.DevicesFragment"
+        android:label="Устройства"
+        tools:layout="@layout/fragment_devices" />
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.example.mobile_embedded_system.ui.SettingsFragment"
+        android:label="Сеть"
+        tools:layout="@layout/fragment_settings" />
+
+    <fragment
+        android:id="@+id/diagnosticsFragment"
+        android:name="com.example.mobile_embedded_system.ui.DiagnosticsFragment"
+        android:label="Инфо"
+        tools:layout="@layout/fragment_diagnostics" />
 </navigation>

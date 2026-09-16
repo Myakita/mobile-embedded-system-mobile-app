@@ -369,6 +369,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     public void onMapReady(@NonNull MapLibreMap map) {
         this.maplibreMap = map;
 
+        tacticalMarkers.clear();
+        waypointMarkers.clear();
+        tacticalTracks.clear();
+        rangeRingPolylines.clear();
+
         map.getUiSettings().setLogoEnabled(false);
         map.getUiSettings().setAttributionEnabled(false);
 
@@ -427,6 +432,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             for (Waypoint wp : waypointManager.getWaypoints()) {
                 Long assignedUnit = waypointManager.getUnitAssignedToWaypoint(wp.getId());
                 renderWaypointMarker(wp, assignedUnit != null ? assignedUnit : 0L);
+            }
+
+            for (TelemetryEntity entity : squadLatestData.values()) {
+                updateUnitMarker(entity);
             }
 
             observeSquadTelemetry();
@@ -841,6 +850,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        tacticalMarkers.clear();
+        waypointMarkers.clear();
+        tacticalTracks.clear();
+        rangeRingPolylines.clear();
         if (mapView != null) {
             mapView.onDestroy();
         }

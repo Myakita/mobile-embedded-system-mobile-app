@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/mapFragment"
+        android:icon="@drawable/ic_nav_map"
+        android:title="Карта" />
+
+    <item
+        android:id="@+id/usersFragment"
+        android:icon="@drawable/ic_nav_users"
+        android:title="Состав" />
+
+    <item
+        android:id="@+id/hierarchyFragment"
+        android:icon="@drawable/ic_nav_hierarchy"
+        android:title="Иерархия" />
+
+    <item
+        android:id="@+id/devicesFragment"
+        android:icon="@drawable/ic_nav_devices"
+        android:title="Устройства" />
+
+    <item
+        android:id="@+id/settingsFragment"
+        android:icon="@drawable/ic_nav_settings"
+        android:title="Сеть" />
+</menu>
