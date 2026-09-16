@@ -66,6 +66,7 @@ public class MqttTransportManager {
 
         new Thread(() -> {
             try {
+                disconnectInternal();
                 mqttClient = new MqttClient(brokerUrl, clientId, new MemoryPersistence());
                 MqttConnectOptions options = new MqttConnectOptions();
                 options.setAutomaticReconnect(true);
@@ -163,20 +164,25 @@ public class MqttTransportManager {
         return entity;
     }
 
-    public synchronized void disconnect() {
+    private synchronized void disconnectInternal() {
         if (mqttClient != null) {
             try {
+                mqttClient.setCallback(null);
                 if (mqttClient.isConnected()) {
-                    mqttClient.disconnect();
+                    mqttClient.disconnectForcibly(1000L);
                 }
                 mqttClient.close();
-            } catch (MqttException e) {
-                Log.e(TAG, "Ошибка отключения MQTT", e);
+            } catch (Exception e) {
+                Log.w(TAG, "Ошибка закрытия предыдущего MQTT клиента: " + e.getMessage());
             } finally {
                 mqttClient = null;
-                isConnecting = false;
             }
         }
+    }
+
+    public synchronized void disconnect() {
+        disconnectInternal();
+        isConnecting = false;
     }
 
     public boolean isConnected() {
