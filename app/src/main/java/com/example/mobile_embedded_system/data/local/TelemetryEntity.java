@@ -27,6 +27,9 @@ public class TelemetryEntity {
     @ColumnInfo(name = "destination_id")
     public long destinationId;
 
+    /**
+     * Время формирования телеметрии на устройстве в секундах Unix Epoch (uint32 по ТЗ §3.3).
+     */
     @ColumnInfo(name = "timestamp")
     public long timestamp;
 

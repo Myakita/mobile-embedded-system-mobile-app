@@ -39,7 +39,7 @@ public final class GpxTrackSerializer {
                         "      <trkpt lat=\"%.6f\" lon=\"%.6f\">\n",
                         pt.latitude, pt.longitude));
 
-                long timeMs = pt.timestamp > 10000000000L ? pt.timestamp : pt.timestamp * 1000L;
+                long timeMs = pt.timestamp * 1000L;
                 sb.append("        <time>").append(isoFormat.format(new Date(timeMs))).append("</time>\n");
                 sb.append("        <extensions>\n");
                 sb.append("          <pulse>").append(pt.pulseBpm).append("</pulse>\n");
