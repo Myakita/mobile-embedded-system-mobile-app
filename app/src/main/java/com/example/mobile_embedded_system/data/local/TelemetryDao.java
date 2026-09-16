@@ -14,10 +14,10 @@ public interface TelemetryDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     long insert(TelemetryEntity record);
 
-    @Query("SELECT * FROM telemetry_records WHERE user_id = :userId ORDER BY timestamp DESC LIMIT 1")
+    @Query("SELECT * FROM telemetry_records WHERE user_id = :userId ORDER BY timestamp DESC, sequence DESC LIMIT 1")
     LiveData<TelemetryEntity> getLatestTelemetryForUser(long userId);
 
-    @Query("SELECT * FROM telemetry_records WHERE user_id = :userId AND timestamp >= :fromTimestamp ORDER BY timestamp ASC")
+    @Query("SELECT * FROM telemetry_records WHERE user_id = :userId AND timestamp >= :fromTimestamp ORDER BY timestamp ASC, sequence ASC")
     LiveData<List<TelemetryEntity>> getHistoryForUser(long userId, long fromTimestamp);
 
     @Query("DELETE FROM telemetry_records WHERE timestamp < :cutoffTimestamp")
