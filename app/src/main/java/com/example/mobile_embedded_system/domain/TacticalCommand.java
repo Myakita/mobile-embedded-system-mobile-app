@@ -1,6 +1,6 @@
 package com.example.mobile_embedded_system.domain;
 
-import java.util.Locale;
+import com.example.mobile_embedded_system.data.model.LMashPayload;
 
 /**
  * Пакет тактического приказа целеуказания (C2 Uplink) (ТЗ §4.1, §14).
@@ -50,11 +50,26 @@ public class TacticalCommand {
     }
 
     /**
-     * Сериализация приказа в легковесный JSON-пакет для передачи по радиоканалу.
+     * Сериализация приказа в бинарный пакет LMashPayload (54 байта Little-Endian по ТЗ §3.3).
      */
-    public String toJson() {
-        return String.format(Locale.US,
-                "{\"cmd\":\"%s\",\"target\":%d,\"callsign\":\"%s\",\"lat\":%.6f,\"lon\":%.6f,\"ts\":%d}",
-                command, targetUserId, waypointCallsign, latitude, longitude, timestampMs);
+    public LMashPayload toLMashPayload(long sequence, long sourceId) {
+        long timestampSec = timestampMs / 1000L;
+        long deviceSerial = (sourceId != 0L) ? sourceId : 99881100L;
+        LMashPayload payload =
+                LMashPayload.createCommand(
+                        sequence,
+                        timestampSec,
+                        deviceSerial,
+                        sourceId,
+                        targetUserId,
+                        LMashPayload.CMD_HOLD
+                );
+        payload.setLatitudeE7((int) (latitude * 1e7));
+        payload.setLongitudeE7((int) (longitude * 1e7));
+        return payload;
+    }
+
+    public byte[] toBytes(long sequence, long sourceId) {
+        return toLMashPayload(sequence, sourceId).toBytes();
     }
 }

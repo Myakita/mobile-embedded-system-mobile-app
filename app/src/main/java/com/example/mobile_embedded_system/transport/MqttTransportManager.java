@@ -203,27 +203,14 @@ public class MqttTransportManager {
 
         try {
             long nextSequence = commandSequence.getAndIncrement();
-            long currentTimestamp = System.currentTimeMillis() / 1000L;
-            long deviceSerial = (sourceId != 0L) ? sourceId : 99881100L;
-
-            LMashPayload payload = LMashPayload.createCommand(
-                    nextSequence,
-                    currentTimestamp,
-                    deviceSerial,
-                    sourceId,
-                    command.getTargetUserId(),
-                    LMashPayload.CMD_HOLD
-            );
-
-            payload.setLatitudeE7((int) (command.getLatitude() * 1e7));
-            payload.setLongitudeE7((int) (command.getLongitude() * 1e7));
+            LMashPayload payload = command.toLMashPayload(nextSequence, sourceId);
 
             MqttMessage message = new MqttMessage(payload.toBytes());
             message.setQos(1); // Гарантированная доставка приказа
             message.setRetained(false);
 
             mqttClient.publish(topic, message);
-            Log.i(TAG, "Бинарная команда отправлена в топик: " + topic + " (seq=" + nextSequence + ", serial=" + deviceSerial + ")");
+            Log.i(TAG, "Бинарная команда отправлена в топик: " + topic + " (seq=" + nextSequence + ")");
             return true;
         } catch (Exception e) {
             Log.e(TAG, "Ошибка отправки команды", e);
