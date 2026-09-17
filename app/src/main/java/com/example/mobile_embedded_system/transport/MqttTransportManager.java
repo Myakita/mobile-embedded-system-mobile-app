@@ -5,6 +5,7 @@ import android.util.Log;
 import com.example.mobile_embedded_system.data.TelemetryRepository;
 import com.example.mobile_embedded_system.data.local.TelemetryEntity;
 import com.example.mobile_embedded_system.data.model.LMashPayload;
+import com.example.mobile_embedded_system.data.model.PacketDiagnosticsModel;
 import com.example.mobile_embedded_system.domain.network.MqttTopicBuilder;
 import com.example.mobile_embedded_system.domain.TacticalCommand;
 
@@ -31,6 +32,8 @@ public class MqttTransportManager {
 
     private final TelemetryRepository repository;
     private final AtomicLong commandSequence = new AtomicLong(1L);
+    private final PacketDiagnosticsModel diagnosticsModel =
+            new PacketDiagnosticsModel();
     private MqttClient mqttClient;
     private boolean isConnecting = false;
 
@@ -78,6 +81,10 @@ public class MqttTransportManager {
                     @Override
                     public void connectComplete(boolean reconnect, String serverURI) {
                         Log.i(TAG, "MQTT подключен к: " + serverURI + " (reconnect=" + reconnect + ")");
+                        diagnosticsModel.setConnectionState("ПОДКЛЮЧЕНО");
+                        diagnosticsModel.setLastReconnectTimestampMs(System.currentTimeMillis());
+                        diagnosticsModel.setBrokerUrl(serverURI);
+                        diagnosticsModel.setActiveSubscriptionTopic(MqttTopicBuilder.buildSubtreeSubscriptionTopic(networkRoot, hierarchyPath));
                         subscribeToTelemetry();
                         if (callback != null) callback.onConnected();
                     }
@@ -85,6 +92,7 @@ public class MqttTransportManager {
                     @Override
                     public void connectionLost(Throwable cause) {
                         Log.w(TAG, "MQTT связь потеряна: " + (cause != null ? cause.getMessage() : "unknown"));
+                        diagnosticsModel.setConnectionState("ОТКЛЮЧЕНО");
                         if (callback != null) callback.onDisconnected(cause != null ? cause.getMessage() : "Соединение разорвано");
                     }
 
@@ -126,23 +134,34 @@ public class MqttTransportManager {
      */
     public void processIncomingMessage(String topic, byte[] payloadBytes) {
         if (payloadBytes == null || payloadBytes.length < LMashPayload.PAYLOAD_SIZE) {
+            diagnosticsModel.incrementMalformedPackets();
             Log.w(TAG, "Отброшен некорректный пакет. Длина: " + (payloadBytes != null ? payloadBytes.length : 0));
             return;
         }
 
+        diagnosticsModel.incrementTotalPackets();
+
         try {
             LMashPayload payload = LMashPayload.fromBytes(payloadBytes);
-            if (!payload.isTelemetry()) {
+            if (payload.isTelemetry()) {
+                diagnosticsModel.incrementTelemetryPackets();
+            } else if (payload.isCommand()) {
+                diagnosticsModel.incrementCommandPackets();
                 Log.d(TAG, "Пропущен пакет не-телеметрии (type=" + payload.getMessageType() + ")");
                 return;
             }
-            
+
             TelemetryEntity entity = convertToEntity(payload);
             repository.insert(entity);
             Log.d(TAG, "Телеметрия сохранена от бойца [" + entity.userId + "], seq=" + entity.sequence);
         } catch (IllegalArgumentException e) {
+            diagnosticsModel.incrementMalformedPackets();
             Log.e(TAG, "Ошибка декодирования бинарного пакета телеметрии", e);
         }
+    }
+
+    public PacketDiagnosticsModel getDiagnosticsModel() {
+        return diagnosticsModel;
     }
 
     private TelemetryEntity convertToEntity(LMashPayload payload) {

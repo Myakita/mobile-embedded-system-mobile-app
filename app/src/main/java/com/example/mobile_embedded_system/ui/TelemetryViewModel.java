@@ -10,6 +10,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.mobile_embedded_system.data.MockTelemetryGenerator;
 import com.example.mobile_embedded_system.data.TelemetryRepository;
 import com.example.mobile_embedded_system.data.local.TelemetryEntity;
+import com.example.mobile_embedded_system.data.model.PacketDiagnosticsModel;
 import com.example.mobile_embedded_system.domain.TacticalWaypointManager;
 import com.example.mobile_embedded_system.transport.MqttTransportManager;
 import com.example.mobile_embedded_system.domain.TacticalCommand;
@@ -107,6 +108,10 @@ public class TelemetryViewModel extends AndroidViewModel {
 
     public LiveData<ConnectionState> getConnectionState() {
         return connectionState;
+    }
+
+    public PacketDiagnosticsModel getDiagnosticsModel() {
+        return mqttTransport.getDiagnosticsModel();
     }
 
     public void setUnitTarget(long userId, double targetLat, double targetLon) {

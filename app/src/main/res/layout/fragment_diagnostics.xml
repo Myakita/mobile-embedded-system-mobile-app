@@ -1,25 +1,345 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/appBg"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="?attr/appBg">
 
-    <TextView
-        style="@style/Text.Label"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="ДИАГНОСТИКА И СТАТИСТИКА ПАКЕТОВ"
-        android:textSize="14sp" />
+        android:orientation="vertical"
+        android:padding="12dp">
 
-    <TextView
-        style="@style/Text.Value"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Модуль контроля MQTT-соединения, дублей и ошибок"
-        android:textColor="?attr/appInk2"
-        android:textSize="12sp" />
-</LinearLayout>
+        <!-- 1. Состояние MQTT Транспорта (§21.1.99) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/appSurface"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/Text.Label"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="1. СОСТОЯНИЕ MQTT ТРАНСПОРТА"
+                    android:textColor="?attr/appInk" />
+
+                <TextView
+                    android:id="@+id/textMqttStatusBadge"
+                    style="@style/Text.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/appBg"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2dp"
+                    android:text="ОТКЛЮЧЕНО"
+                    android:textColor="?attr/appStatusCritical"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/textDiagBroker"
+                style="@style/Text.Value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="БРОКЕР: tcp://broker.hivemq.com:1883"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/textDiagLastReconnect"
+                style="@style/Text.Value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="ПОСЛ. ПЕРЕПОДКЛЮЧЕНИЕ: --:--:--"
+                android:textColor="?attr/appInk2"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/textDiagSubscription"
+                style="@style/Text.Value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="ПОДПИСКА: mesh-a/7F10/21A0/#"
+                android:textColor="?attr/appInk2"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- 2. Счётчики Пакетов (§21.1.100) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="?attr/appSurface"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2. СТАТИСТИКА ПАКЕТНОГО ОБМЕНА"
+                android:textColor="?attr/appInk" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        style="@style/Text.Label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ВСЕГО ПАКЕТОВ" />
+                    <TextView
+                        android:id="@+id/textStatTotal"
+                        style="@style/Text.Value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="18sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        style="@style/Text.Label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="TELEMETRY" />
+                    <TextView
+                        android:id="@+id/textStatTelemetry"
+                        style="@style/Text.Value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="?attr/appStatusOk"
+                        android:textSize="18sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        style="@style/Text.Label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="COMMAND" />
+                    <TextView
+                        android:id="@+id/textStatCommand"
+                        style="@style/Text.Value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="?attr/appStatusWarning"
+                        android:textSize="18sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="8dp"
+                android:background="?attr/appHairline" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        style="@style/Text.Label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ДУБЛИ (DROPPED)" />
+                    <TextView
+                        android:id="@+id/textStatDuplicates"
+                        style="@style/Text.Value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        style="@style/Text.Label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ОШИБКИ CRYPTO" />
+                    <TextView
+                        android:id="@+id/textStatCryptoErrors"
+                        style="@style/Text.Value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="?attr/appStatusCritical"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        style="@style/Text.Label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="БИТЫЕ ПАКЕТЫ" />
+                    <TextView
+                        android:id="@+id/textStatMalformed"
+                        style="@style/Text.Value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="?attr/appStatusCritical"
+                        android:textSize="16sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 3. Диагностика Участника (§21.1.101) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="?attr/appSurface"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="3. ДИАГНОСТИКА УЧАСТНИКА СЕТИ"
+                android:textColor="?attr/appInk" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="28dp"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/btnDiag1001"
+                    style="@style/Text.Label"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="?attr/appBg"
+                    android:gravity="center"
+                    android:text="[1001] КМД" />
+
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="match_parent" />
+
+                <TextView
+                    android:id="@+id/btnDiag1002"
+                    style="@style/Text.Label"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="?attr/appBg"
+                    android:gravity="center"
+                    android:text="[1002] СТР" />
+
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="match_parent" />
+
+                <TextView
+                    android:id="@+id/btnDiag1003"
+                    style="@style/Text.Label"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="?attr/appBg"
+                    android:gravity="center"
+                    android:text="[1003] САН" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/textDiagDeviceSerial"
+                style="@style/Text.Value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="DEVICE SERIAL: --"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/textDiagLastSeq"
+                style="@style/Text.Value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="LAST SEQUENCE: --"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/textDiagLastTimestamp"
+                style="@style/Text.Value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="LAST TIMESTAMP: --"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/textDiagLastSeen"
+                style="@style/Text.Value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="LAST SEEN: --"
+                android:textColor="?attr/appStatusOk"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Кнопка сброса счётчиков -->
+        <TextView
+            android:id="@+id/btnResetDiagCounters"
+            style="@style/Text.Label"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_marginTop="12dp"
+            android:background="?attr/appInk"
+            android:gravity="center"
+            android:text="СБРОСИТЬ СЧЁТЧИКИ ПАКЕТОВ"
+            android:textColor="?attr/appSurface"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+</ScrollView>
