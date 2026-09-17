@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/appBg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <!-- Статус синхронизации (§11.58, §11.59) -->
+        <LinearLayout
+            android:id="@+id/bannerConfigStatus"
+            android:layout_width="match_parent"
+            android:layout_height="32dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/status_ok"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp">
+
+            <TextView
+                android:id="@+id/textConfigSyncStatus"
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="СТАТУС КОНФИГУРАЦИИ: ПРИМЕНЕНО"
+                android:textColor="@color/surface"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- 1. Идентификаторы терминала (§11.51) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="?attr/appSurface"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1. ИДЕНТИФИКАТОРЫ И НАЗНАЧЕНИЕ (C2)"
+                android:textColor="?attr/appInk" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/editDeviceSerial"
+                    style="@style/Text.Value"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Serial (99881100)"
+                    android:inputType="number"
+                    android:textSize="13sp" />
+
+                <EditText
+                    android:id="@+id/editUserId"
+                    style="@style/Text.Value"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:hint="User ID (1001)"
+                    android:inputType="number"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 2. Датчики и Период Телеметрии (§11.52, §11.53) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="?attr/appSurface"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2. ДАТЧИКИ И ПЕРИОД ТЕЛЕМЕТРИИ"
+                android:textColor="?attr/appInk" />
+
+            <CheckBox
+                android:id="@+id/checkTemp"
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Температура (°C)" />
+
+            <CheckBox
+                android:id="@+id/checkPulse"
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Пульс (BPM)" />
+
+            <CheckBox
+                android:id="@+id/checkPressure"
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Артериальное давление (sys/dia)" />
+
+            <CheckBox
+                android:id="@+id/checkGnss"
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="ГНСС Навигация (GNSS)" />
+
+            <CheckBox
+                android:id="@+id/checkImu"
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Инерциальный модуль (IMU)" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/Text.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Период отправки (сек):" />
+
+                <EditText
+                    android:id="@+id/editPeriodSec"
+                    style="@style/Text.Value"
+                    android:layout_width="80dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:inputType="number"
+                    android:text="1"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 3. Настройка LoRa Mesh (§11.54) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="?attr/appSurface"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <CheckBox
+                android:id="@+id/checkLoraEnable"
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="3. ИНТЕРФЕЙС LORA MESH"
+                android:textColor="?attr/appInk" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/editLoraFreq"
+                    style="@style/Text.Value"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Частота (868 МГц)"
+                    android:inputType="number"
+                    android:text="868"
+                    android:textSize="13sp" />
+
+                <EditText
+                    android:id="@+id/editLoraSf"
+                    style="@style/Text.Value"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:hint="SF (7..12)"
+                    android:inputType="number"
+                    android:text="7"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 4. Настройка Wi-Fi & LTE (§11.55, §11.56) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="?attr/appSurface"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4. IP-ИНТЕРФЕЙСЫ (WI-FI &amp; LTE)"
+                android:textColor="?attr/appInk" />
+
+            <CheckBox
+                android:id="@+id/checkWifiEnable"
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Wi-Fi активирован" />
+
+            <EditText
+                android:id="@+id/editWifiSsid"
+                style="@style/Text.Value"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Wi-Fi SSID"
+                android:text="TelemetryMesh_AP"
+                android:textSize="13sp" />
+
+            <CheckBox
+                android:id="@+id/checkLteEnable"
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:checked="true"
+                android:text="LTE активирован (wwan0)" />
+
+            <EditText
+                android:id="@+id/editLteApn"
+                style="@style/Text.Value"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="LTE APN"
+                android:text="internet"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- 5. Параметры MQTT Брокера (§11.57) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="?attr/appSurface"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="5. НАСТРОЙКИ MQTT ПРОСТРАНСТВА"
+                android:textColor="?attr/appInk" />
+
+            <EditText
+                android:id="@+id/editMqttBroker"
+                style="@style/Text.Value"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Broker URL"
+                android:text="tcp://broker.hivemq.com:1883"
+                android:textSize="13sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/editNetworkRoot"
+                    style="@style/Text.Value"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Network Root (mesh-a)"
+                    android:text="mesh-a"
+                    android:textSize="13sp" />
+
+                <EditText
+                    android:id="@+id/editHierarchyPath"
+                    style="@style/Text.Value"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:hint="Path (7F10/21A0)"
+                    android:text="7F10/21A0"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Кнопка передачи конфигурации -->
+        <TextView
+            android:id="@+id/btnApplyConfig"
+            style="@style/Text.Label"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="12dp"
+            android:background="?attr/appInk"
+            android:gravity="center"
+            android:text="ПЕРЕДАТЬ КОНФИГУРАЦИЮ НА УСТРОЙСТВО"
+            android:textColor="?attr/appSurface"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+</ScrollView>
