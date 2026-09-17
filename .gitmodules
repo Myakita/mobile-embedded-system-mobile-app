@@ -1,0 +1,4 @@
+[submodule "protocol"]
+	path = protocol
+	url = https://github.com/Myakita/mobile-embedded-system-protocol.git
+	branch = main

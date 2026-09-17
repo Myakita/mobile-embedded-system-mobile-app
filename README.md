@@ -77,20 +77,22 @@
 
 ## Работа с общей системой
 
-Ветка `mobile_app` содержит самостоятельный Android-проект. В ветке `main` он подключён как Git submodule в каталоге `mobile_app/`; основной проект фиксирует конкретный проверенный коммит приложения, а не копирует его исходники.
+Этот репозиторий содержит самостоятельный Android-проект. В [основном репозитории](https://github.com/Myakita/mobile-embedded-system) он подключён как Git submodule в каталоге `mobile_app/`; основной проект фиксирует конкретный проверенный коммит приложения, а не копирует его исходники.
 
 Для разработки приложения можно клонировать только эту ветку:
 
 ```bash
-git clone --branch mobile_app https://github.com/Myakita/mobile-embedded-system.git
+git clone https://github.com/Myakita/mobile-embedded-system-mobile-app.git
 ```
 
 Либо можно начать с общей системы и загрузить закреплённую версию приложения:
 
 ```bash
-git clone --branch main --recurse-submodules https://github.com/Myakita/mobile-embedded-system.git
+git clone --recurse-submodules https://github.com/Myakita/mobile-embedded-system.git
 cd mobile-embedded-system/mobile_app
-git switch mobile_app
+git switch main
 ```
 
-После разработки изменения приложения коммитятся и отправляются в `mobile_app`. Затем из `main` отдельным коммитом обновляется указатель подмодуля на проверенный коммит. Ветки `main` и `mobile_app` не сливаются друг с другом: embedded-часть развивается в `main`, Android-приложение — в `mobile_app`.
+После разработки изменения приложения коммитятся и отправляются в `main` этого репозитория. Затем в основном репозитории отдельным коммитом обновляется указатель подмодуля на проверенный коммит. Репозитории не сливаются друг с другом: embedded-часть развивается в основном проекте, Android-приложение — здесь.
+
+Каталог `protocol/` — Git submodule с версионированной спецификацией, MQTT-контрактом и тестовыми векторами. Изменения бинарного формата сначала оформляются в [репозитории протокола](https://github.com/Myakita/mobile-embedded-system-protocol), затем Android и embedded реализации обновляют закреплённый коммит и проходят общие векторы.
