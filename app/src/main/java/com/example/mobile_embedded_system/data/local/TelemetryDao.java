@@ -20,6 +20,9 @@ public interface TelemetryDao {
     @Query("SELECT * FROM telemetry_records WHERE user_id = :userId AND timestamp >= :fromTimestamp ORDER BY timestamp ASC, sequence ASC")
     LiveData<List<TelemetryEntity>> getHistoryForUser(long userId, long fromTimestamp);
 
+    @Query("SELECT * FROM telemetry_records WHERE user_id = :userId AND timestamp >= :fromTimestamp ORDER BY timestamp ASC, sequence ASC")
+    List<TelemetryEntity> getHistoryForUserSync(long userId, long fromTimestamp);
+
     /**
      * Удаление устаревших записей телеметрии по времени формирования (в секундах Unix Epoch).
      */

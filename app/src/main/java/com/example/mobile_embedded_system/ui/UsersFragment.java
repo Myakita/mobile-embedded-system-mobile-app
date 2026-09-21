@@ -227,10 +227,7 @@ public class UsersFragment extends Fragment {
     }
 
     private String getCallsignByUserId(long userId) {
-        if (userId == 1001L) return "БОЕЦ [1001] • КОМАНДИР";
-        if (userId == 1002L) return "БОЕЦ [1002] • СТРЕЛОК";
-        if (userId == 1003L) return "БОЕЦ [1003] • САНИНСТРУКТОР";
-        return "БОЕЦ [" + userId + "]";
+        return viewModel.getCallsignForUser(userId);
     }
 
     private long getSerialByUserId(long userId) {

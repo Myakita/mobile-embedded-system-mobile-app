@@ -17,6 +17,7 @@ import com.example.mobile_embedded_system.data.local.SubjectEntity;
 import com.example.mobile_embedded_system.data.local.TelemetryDao;
 import com.example.mobile_embedded_system.data.local.TelemetryEntity;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -115,6 +116,10 @@ public class TelemetryRepository {
 
     public LiveData<List<TelemetryEntity>> getHistoryForUser(long userId, long sinceTimestamp) {
         return telemetryDao.getHistoryForUser(userId, sinceTimestamp);
+    }
+
+    public List<TelemetryEntity> getHistoryForUserSync(long userId, long sinceTimestamp) {
+        return telemetryDao != null ? telemetryDao.getHistoryForUserSync(userId, sinceTimestamp) : Collections.emptyList();
     }
 
     /**

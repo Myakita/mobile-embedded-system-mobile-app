@@ -17,12 +17,23 @@ import com.example.mobile_embedded_system.data.model.DeviceConfigModel;
 import com.example.mobile_embedded_system.data.model.PacketDiagnosticsModel;
 import com.example.mobile_embedded_system.domain.TacticalWaypointManager;
 import com.example.mobile_embedded_system.domain.UnitHierarchyManager;
+import android.os.Handler;
+import android.os.Looper;
+
+import com.example.mobile_embedded_system.domain.GpxTrackSerializer;
+import com.example.mobile_embedded_system.domain.HierarchyNode;
+import com.example.mobile_embedded_system.domain.KmlTrackSerializer;
 import com.example.mobile_embedded_system.security.KeyStoreManager;
 import com.example.mobile_embedded_system.transport.MqttTransportManager;
 import com.example.mobile_embedded_system.domain.TacticalCommand;
 import com.example.mobile_embedded_system.domain.Waypoint;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * MVVM-фасад для доступа к телеметрии и сохранения состояния экрана (ТЗ §4.2).
@@ -34,6 +45,17 @@ public class TelemetryViewModel extends AndroidViewModel {
         CONNECTING,
         CONNECTED,
         MOCK_MODE
+    }
+
+    public enum ExportFormat {
+        GPX,
+        KML,
+        BOTH
+    }
+
+    public interface ExportCallback {
+        void onSuccess(String fileName, int count);
+        void onError(String error);
     }
 
     private final TelemetryRepository repository;
@@ -70,6 +92,11 @@ public class TelemetryViewModel extends AndroidViewModel {
 
     public List<Long> getSquadUserIds() {
         return hierarchyManager.getAllUnitUserIds();
+    }
+
+    public String getCallsignForUser(long userId) {
+        HierarchyNode node = hierarchyManager.findNodeByUserId(userId);
+        return (node != null && node.getName() != null) ? node.getName().toUpperCase(Locale.ROOT) : "БОЕЦ [" + userId + "]";
     }
 
     public java.util.concurrent.ExecutorService getRepositoryExecutor() {
@@ -205,6 +232,79 @@ public class TelemetryViewModel extends AndroidViewModel {
     public void pruneOldTelemetry(long retentionMillis) {
         long cutoffTimestampSec = (System.currentTimeMillis() - retentionMillis) / 1000L;
         repository.pruneOlderThan(cutoffTimestampSec);
+    }
+
+    /**
+     * Экспорт сессии телеметрии в форматы GPX 1.1 и/или KML 2.2 (ТЗ §4.3, §6.9, §6.10).
+     */
+    public void exportTrackSession(long userId, File baseDir, ExportFormat format, ExportCallback callback) {
+        if (baseDir == null) {
+            if (callback != null) {
+                new Handler(Looper.getMainLooper()).post(() -> callback.onError("НЕ УКАЗАНА ДИРЕКТОРИЯ"));
+            }
+            return;
+        }
+
+        repository.getExecutorService().execute(() -> {
+            try {
+                List<TelemetryEntity> history = repository.getHistoryForUserSync(userId, 0L);
+                if (history == null || history.isEmpty()) {
+                    if (callback != null) {
+                        new Handler(Looper.getMainLooper()).post(() -> callback.onError("НЕТ ДАННЫХ ДЛЯ ЭКСПОРТА"));
+                    }
+                    return;
+                }
+
+                File exportDir = new File(baseDir, "tracks");
+                if (!exportDir.exists()) {
+                    exportDir.mkdirs();
+                }
+
+                String callsign = getCallsignForUser(userId);
+                long epochSec = System.currentTimeMillis() / 1000L;
+                StringBuilder resultNames = new StringBuilder();
+
+                if (format == ExportFormat.GPX || format == ExportFormat.BOTH) {
+                    String gpxContent = GpxTrackSerializer.serialize(callsign, history);
+                    String gpxFileName = String.format(Locale.US, "track_%d_%d.gpx", userId, epochSec);
+                    File gpxFile = new File(exportDir, gpxFileName);
+                    try (FileOutputStream fos = new FileOutputStream(gpxFile);
+                         OutputStreamWriter writer = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
+                        writer.write(gpxContent);
+                        writer.flush();
+                    }
+                    resultNames.append(gpxFileName);
+                }
+
+                if (format == ExportFormat.KML || format == ExportFormat.BOTH) {
+                    String kmlContent = KmlTrackSerializer.serialize(callsign, history);
+                    String kmlFileName = String.format(Locale.US, "track_%d_%d.kml", userId, epochSec);
+                    File kmlFile = new File(exportDir, kmlFileName);
+                    try (FileOutputStream fos = new FileOutputStream(kmlFile);
+                         OutputStreamWriter writer = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
+                        writer.write(kmlContent);
+                        writer.flush();
+                    }
+                    if (resultNames.length() > 0) {
+                        resultNames.append(" / ");
+                    }
+                    resultNames.append(kmlFileName);
+                }
+
+                // Регламентная фоновая очистка записей старше 24 часов (ТЗ §4.3)
+                pruneOldTelemetry(24L * 60L * 60L * 1000L);
+
+                final String savedNames = resultNames.toString();
+                final int count = history.size();
+                if (callback != null) {
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onSuccess(savedNames, count));
+                }
+            } catch (Exception e) {
+                if (callback != null) {
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onError("ОШИБКА ЭКСПОРТА: " + e.getMessage()));
+                }
+            }
+        });
     }
 
     /**

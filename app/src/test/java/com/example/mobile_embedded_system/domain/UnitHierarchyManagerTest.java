@@ -42,6 +42,17 @@ public class UnitHierarchyManagerTest {
     }
 
     @Test
+    public void testFindNodeByUserId() {
+        UnitHierarchyManager manager = new UnitHierarchyManager();
+        HierarchyNode commander = manager.findNodeByUserId(1001L);
+        assertNotNull(commander);
+        assertEquals("Боец [1001] • Командир", commander.getName());
+        assertEquals(1001L, (long) commander.getUserId());
+
+        assertNull(manager.findNodeByUserId(9999L));
+    }
+
+    @Test
     public void testAddAndRemoveNode() {
         UnitHierarchyManager manager = new UnitHierarchyManager();
 

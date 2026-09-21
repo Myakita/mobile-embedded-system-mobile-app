@@ -651,7 +651,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         if (alert != null) {
             currentAlertUserId = alert.userId;
             bannerEmergency.setVisibility(View.VISIBLE);
-            textEmergencyTitle.setText("ТРЕВОГА: БОЕЦ [" + alert.userId + "] • " + alert.reason);
+            textEmergencyTitle.setText("ТРЕВОГА: " + viewModel.getCallsignForUser(alert.userId) + " • " + alert.reason.toUpperCase(Locale.ROOT));
             if (alert.isNewAlert) {
                 triggerTactileAlert();
             }
@@ -762,10 +762,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private String getCallsignByUserId(long userId) {
-        if (userId == 1001L) return "БОЕЦ [1001] • КОМАНДИР";
-        if (userId == 1002L) return "БОЕЦ [1002] • СТРЕЛОК";
-        if (userId == 1003L) return "БОЕЦ [1003] • САНИНСТРУКТОР";
-        return "БОЕЦ [" + userId + "]";
+        return viewModel.getCallsignForUser(userId);
     }
 
     private Bitmap createTacticalMarkerBitmap(float headingDegrees, int arrowColor, boolean isActive, boolean isCritical, boolean isStale) {
@@ -898,57 +895,22 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         isExporting = true;
         triggerTactileAlert();
 
-        // 1. Запрашиваем LiveData
-        final LiveData<List<TelemetryEntity>> historyLiveData =
-                viewModel.getHistory(activeUserId, 0L);
-
-        // 2. Разовая подписка: отписываемся сразу при первом получении данных
-        historyLiveData.observe(getViewLifecycleOwner(), new Observer<List<TelemetryEntity>>() {
+        File baseDir = requireContext().getExternalFilesDir(null);
+        viewModel.exportTrackSession(activeUserId, baseDir, TelemetryViewModel.ExportFormat.BOTH, new TelemetryViewModel.ExportCallback() {
             @Override
-            public void onChanged(List<TelemetryEntity> history) {
-                // Немедленно останавливаем наблюдение, чтобы не реагировать на новые такты телеметрии
-                historyLiveData.removeObserver(this);
-
-                if (history == null || history.isEmpty()) {
-                    isExporting = false;
-                    Toast.makeText(requireContext(), "НЕТ ДАННЫХ ДЛЯ ЭКСПОРТА", Toast.LENGTH_SHORT).show();
-                    return;
+            public void onSuccess(String fileName, int count) {
+                isExporting = false;
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), "ЭКСПОРТ: " + fileName + " (" + count + " ТОЧЕК)", Toast.LENGTH_LONG).show();
                 }
+            }
 
-                // 3. Выполняем файловые операции в пуле потоков репозитория
-                viewModel.getRepositoryExecutor().execute(() -> {
-                    try {
-                        String callsign = getCallsignByUserId(activeUserId);
-                        String gpxContent = GpxTrackSerializer.serialize(callsign, history);
-
-                        File exportDir = new File(requireContext().getExternalFilesDir(null), "tracks");
-                        if (!exportDir.exists()) {
-                            exportDir.mkdirs();
-                        }
-
-                        String fileName = String.format(Locale.US, "track_%d_%d.gpx", activeUserId, System.currentTimeMillis() / 1000L);
-                        File gpxFile = new File(exportDir, fileName);
-
-                        try (FileOutputStream fos = new FileOutputStream(gpxFile);
-                             OutputStreamWriter writer = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
-                            writer.write(gpxContent);
-                            writer.flush();
-                        }
-
-                        // Регламентная фоновая очистка записей старше 24 часов (ТЗ §4.3)
-                        viewModel.pruneOldTelemetry(24L * 60L * 60L * 1000L);
-
-                        requireActivity().runOnUiThread(() -> {
-                            isExporting = false;
-                            Toast.makeText(requireContext(), "GPX СОХРАНЕН: " + fileName + " (" + history.size() + " ТОЧЕК)", Toast.LENGTH_LONG).show();
-                        });
-                    } catch (Exception e) {
-                        requireActivity().runOnUiThread(() -> {
-                            isExporting = false;
-                            Toast.makeText(requireContext(), "ОШИБКА ЭКСПОРТА: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        });
-                    }
-                });
+            @Override
+            public void onError(String error) {
+                isExporting = false;
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }

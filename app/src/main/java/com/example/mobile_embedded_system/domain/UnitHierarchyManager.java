@@ -184,6 +184,21 @@ public class UnitHierarchyManager {
         return null;
     }
 
+    public synchronized HierarchyNode findNodeByUserId(long userId) {
+        return findNodeByUserIdRecursive(rootNodes, userId);
+    }
+
+    private HierarchyNode findNodeByUserIdRecursive(List<HierarchyNode> nodes, long userId) {
+        for (HierarchyNode node : nodes) {
+            if (node.getType() == HierarchyNode.NodeType.SOLDIER && node.getUserId() != null && node.getUserId() == userId) {
+                return node;
+            }
+            HierarchyNode found = findNodeByUserIdRecursive(node.getChildren(), userId);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
     public synchronized HierarchyNode addNode(String name, HierarchyNode.NodeType type, Long parentId, Long userId) {
         long id = nextNodeId++;
         HierarchyNode parent = parentId != null ? findNodeById(parentId) : null;

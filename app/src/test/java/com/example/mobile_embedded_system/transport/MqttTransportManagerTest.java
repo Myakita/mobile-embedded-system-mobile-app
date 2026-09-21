@@ -132,6 +132,11 @@ public class MqttTransportManagerTest {
         }
 
         @Override
+        public List<TelemetryEntity> getHistoryForUserSync(long userId, long fromTimestamp) {
+            return new ArrayList<>();
+        }
+
+        @Override
         public int deleteOlderThan(long timestampThreshold) {
             return 0;
         }

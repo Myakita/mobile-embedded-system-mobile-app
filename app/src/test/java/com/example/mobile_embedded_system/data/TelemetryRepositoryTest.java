@@ -96,9 +96,20 @@ public class TelemetryRepositoryTest {
         }
 
         @Override
+        public List<TelemetryEntity> getHistoryForUserSync(long userId, long sinceTimestamp) {
+            return Collections.emptyList();
+        }
+
+        @Override
         public int deleteOlderThan(long timestampThreshold) {
             this.lastDeletedThreshold = timestampThreshold;
             return 0;
         }
+    }
+
+    @Test
+    public void testGetHistoryForUserSyncReturnsList() {
+        List<TelemetryEntity> list = repository.getHistoryForUserSync(1001L, 0L);
+        assertNotNull(list);
     }
 }
