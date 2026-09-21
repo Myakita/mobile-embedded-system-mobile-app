@@ -15,7 +15,7 @@ import androidx.room.RoomDatabase;
                 DeviceEntity.class,
                 CommandEntity.class
         },
-        version = 4,
+        version = 5,
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {

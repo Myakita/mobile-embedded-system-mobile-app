@@ -23,6 +23,10 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -33,8 +37,9 @@ public class MqttTransportManager {
     private static final String TAG = "MqttTransport";
 
     public static final byte FLAG_ENCRYPTED = 0x01;
+    private static final int DEDUP_CACHE_SIZE = 500;
 
-    // Настройки сети (ТЗ §1.40) - временно хардкод для MVP P0
+    // Настройки сети (ТЗ §1.40) - динамически настраивается через setNetworkConfig
     private String networkRoot = "mesh-a";
     private String hierarchyPath = "7F10/21A0";
 
@@ -43,6 +48,14 @@ public class MqttTransportManager {
     private final AtomicLong commandSequence = new AtomicLong(1L);
     private final PacketDiagnosticsModel diagnosticsModel =
             new PacketDiagnosticsModel();
+    private final Set<String> dedupCache = Collections.newSetFromMap(
+            new LinkedHashMap<String, Boolean>(DEDUP_CACHE_SIZE, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
+                    return size() > DEDUP_CACHE_SIZE;
+                }
+            }
+    );
     private MqttClient mqttClient;
     private boolean isConnecting = false;
 
@@ -91,6 +104,17 @@ public class MqttTransportManager {
                 options.setConnectionTimeout(5);
                 options.setKeepAliveInterval(10);
 
+                if (brokerUrl != null && brokerUrl.startsWith("ssl://")) {
+                    try {
+                        javax.net.ssl.SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("TLSv1.2");
+                        sslContext.init(null, null, null);
+                        options.setSocketFactory(sslContext.getSocketFactory());
+                        Log.i(TAG, "Включен TLSv1.2 для подключения к: " + brokerUrl);
+                    } catch (Exception sslEx) {
+                        Log.e(TAG, "Ошибка настройки TLS сокета", sslEx);
+                    }
+                }
+
                 mqttClient.setCallback(new MqttCallbackExtended() {
                     @Override
                     public void connectComplete(boolean reconnect, String serverURI) {
@@ -121,12 +145,15 @@ public class MqttTransportManager {
                 });
 
                 mqttClient.connect(options);
-                isConnecting = false;
 
             } catch (MqttException e) {
-                isConnecting = false;
                 Log.e(TAG, "Ошибка подключения к брокеру MQTT: " + e.getMessage(), e);
                 if (callback != null) callback.onError("Сбой MQTT: " + e.getReasonCode());
+            } catch (Throwable t) {
+                Log.e(TAG, "Непредвиденная ошибка подключения: " + t.getMessage(), t);
+                if (callback != null) callback.onError("Ошибка подключения: " + t.getMessage());
+            } finally {
+                isConnecting = false;
             }
         }).start();
     }
@@ -182,6 +209,24 @@ public class MqttTransportManager {
 
         try {
             LMashPayload payload = LMashPayload.fromBytes(unencryptedBytes);
+
+            // Проверка исчерпания TTL (AC-06.3, Архитектура v3 §17)
+            if (payload.getTtl() <= 0) {
+                Log.d(TAG, "Отброшен пакет с исчерпанным TTL=" + payload.getTtl());
+                return;
+            }
+
+            // In-Memory LRU дедупликация (Архитектура v3 §13)
+            String packetKey = payload.getDeviceSerial() + ":" + payload.getSequence();
+            synchronized (dedupCache) {
+                if (dedupCache.contains(packetKey)) {
+                    diagnosticsModel.incrementDuplicatesDropped();
+                    Log.d(TAG, "Отброшен дубликат пакета (in-memory): " + packetKey);
+                    return;
+                }
+                dedupCache.add(packetKey);
+            }
+
             if (payload.isTelemetry()) {
                 diagnosticsModel.incrementTelemetryPackets();
             } else if (payload.isCommand()) {
@@ -194,7 +239,7 @@ public class MqttTransportManager {
             repository.insert(entity, inserted -> {
                 if (!inserted) {
                     diagnosticsModel.incrementDuplicatesDropped();
-                    Log.d(TAG, "Отброшен дубликат пакета [" + entity.deviceSerial + "], seq=" + entity.sequence);
+                    Log.d(TAG, "Отброшен дубликат пакета в БД [" + entity.deviceSerial + "], seq=" + entity.sequence);
                 } else {
                     Log.d(TAG, "Телеметрия сохранена от бойца [" + entity.userId + "], seq=" + entity.sequence);
                 }
@@ -211,6 +256,7 @@ public class MqttTransportManager {
 
     private TelemetryEntity convertToEntity(LMashPayload payload) {
         TelemetryEntity entity = new TelemetryEntity();
+        entity.networkId = this.networkRoot;
         entity.deviceSerial = payload.getDeviceSerial();
         entity.sequence = payload.getSequence();
         entity.userId = payload.getUserId();

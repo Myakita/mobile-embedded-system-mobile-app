@@ -7,6 +7,18 @@ import java.util.Locale;
  */
 public class DeviceConfigModel {
 
+    // Границы периода передачи телеметрии по ТЗ §18.1
+    public static final int MIN_TELEMETRY_PERIOD_SEC = 5;
+    public static final int MAX_TELEMETRY_PERIOD_SEC = 300;
+
+    public static boolean isValidTelemetryPeriod(int periodSec) {
+        return periodSec >= MIN_TELEMETRY_PERIOD_SEC && periodSec <= MAX_TELEMETRY_PERIOD_SEC;
+    }
+
+    public static boolean isValidKeyLength(byte[] keyBytes) {
+        return keyBytes != null && (keyBytes.length == 16 || keyBytes.length == 32);
+    }
+
     // Идентификаторы (§11.51)
     private long deviceSerial = 99881100L;
     private long userId = 1001L;

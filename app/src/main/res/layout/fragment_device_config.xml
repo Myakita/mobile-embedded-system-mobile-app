@@ -310,7 +310,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Кнопка передачи конфигурации -->
+        <!-- Кнопка передачи конфигурации (Hold-to-confirm 1.5s, Part D) -->
         <TextView
             android:id="@+id/btnApplyConfig"
             style="@style/Text.Label"
@@ -319,7 +319,7 @@
             android:layout_marginTop="12dp"
             android:background="?attr/appInk"
             android:gravity="center"
-            android:text="ПЕРЕДАТЬ КОНФИГУРАЦИЮ НА УСТРОЙСТВО"
+            android:text="ЗАПИСАТЬ КОНФИГУРАЦИЮ [УДЕРЖАНИЕ 1.5с]"
             android:textColor="?attr/appSurface"
             android:textSize="12sp" />
 

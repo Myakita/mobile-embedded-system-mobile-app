@@ -3,12 +3,16 @@ package com.example.mobile_embedded_system.data.local;
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 /**
  * Сущность привязанного устройства (devices) по ТЗ (DataBase.txt).
  */
-@Entity(tableName = "devices")
+@Entity(
+        tableName = "devices",
+        indices = {@Index(value = {"network_id", "serial"}, unique = true)}
+)
 public class DeviceEntity {
 
     @PrimaryKey

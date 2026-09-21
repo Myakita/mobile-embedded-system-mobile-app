@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import androidx.lifecycle.LiveData;
 
@@ -124,6 +125,51 @@ public class UnitHierarchyManagerTest {
         assertNull(fakeDao.findById(String.valueOf(added.getId())));
     }
 
+    @Test
+    public void testMoveNodeCycleDetectionAndSuccess() {
+        UnitHierarchyManager manager = new UnitHierarchyManager();
+        // Node 2 (Взвод 1) -> Node 4 (Отделение А) -> Node 5 (Командир)
+        // 1. Попытка переместить узел в самого себя
+        try {
+            manager.moveNode(2L, 2L);
+            fail("Ожидалось исключение при перемещении узла в самого себя");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Циклическая"));
+        }
+
+        // 2. Попытка переместить родительский узел (2) внутрь своего потомка (4)
+        try {
+            manager.moveNode(2L, 4L);
+            fail("Ожидалось исключение при создании цикла иерархии (AC-02.1)");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Циклическая"));
+        }
+
+        // 3. Корректное перемещение узла 4 в корень (null)
+        boolean moved = manager.moveNode(4L, null);
+        assertTrue(moved);
+        HierarchyNode squad4 = manager.findNodeById(4L);
+        assertNotNull(squad4);
+        assertNull(squad4.getParentId());
+    }
+
+    @Test
+    public void testIsSubordinateAcl() {
+        UnitHierarchyManager manager = new UnitHierarchyManager();
+        // В дефолтной иерархии 1001 - Командир отделения А, 1002 - Снайпер отделения А
+        // Командир отделения может командовать подчиненным стрелком
+        assertTrue(manager.isSubordinate(1001L, 1002L));
+
+        // Сам себе всегда подчинен / имеет доступ
+        assertTrue(manager.isSubordinate(1001L, 1001L));
+
+        // Рядовой боец (1002) не может отдавать приказы командиру (1001)
+        assertFalse(manager.isSubordinate(1002L, 1001L));
+
+        // Несуществующий боец
+        assertFalse(manager.isSubordinate(9999L, 1001L));
+    }
+
     private static class FakeSubjectDao implements SubjectDao {
         final List<SubjectEntity> subjects = new ArrayList<>();
 
@@ -158,6 +204,22 @@ public class UnitHierarchyManagerTest {
         @Override
         public LiveData<List<SubjectEntity>> getSubjectsForNetwork(String networkId) {
             return null;
+        }
+
+        @Override
+        public List<SubjectEntity> getSubjectsForNetworkSync(String networkId) {
+            List<SubjectEntity> res = new ArrayList<>();
+            for (SubjectEntity s : subjects) {
+                if (networkId.equals(s.networkId)) {
+                    res.add(s);
+                }
+            }
+            return res;
+        }
+
+        @Override
+        public void deleteForNetwork(String networkId) {
+            subjects.removeIf(s -> networkId.equals(s.networkId));
         }
 
         SubjectEntity findById(String id) {

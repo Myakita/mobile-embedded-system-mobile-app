@@ -4,12 +4,16 @@ import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Ignore;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 /**
  * Сущность участника группы (subjects) по ТЗ (DataBase.txt).
  */
-@Entity(tableName = "subjects")
+@Entity(
+        tableName = "subjects",
+        indices = {@Index(value = {"network_id", "user_id"}, unique = true)}
+)
 public class SubjectEntity {
 
     @PrimaryKey
@@ -21,7 +25,7 @@ public class SubjectEntity {
     public String networkId;
 
     @ColumnInfo(name = "user_id")
-    public long userId;
+    public Long userId;
 
     @ColumnInfo(name = "name")
     public String name;
@@ -39,12 +43,12 @@ public class SubjectEntity {
     }
 
     @Ignore
-    public SubjectEntity(@NonNull String id, String networkId, long userId, String name, String parentId) {
+    public SubjectEntity(@NonNull String id, String networkId, Long userId, String name, String parentId) {
         this(id, networkId, userId, name, parentId, null, null);
     }
 
     @Ignore
-    public SubjectEntity(@NonNull String id, String networkId, long userId, String name, String parentId, String nodeType, String hierarchyPath) {
+    public SubjectEntity(@NonNull String id, String networkId, Long userId, String name, String parentId, String nodeType, String hierarchyPath) {
         this.id = id;
         this.networkId = networkId;
         this.userId = userId;

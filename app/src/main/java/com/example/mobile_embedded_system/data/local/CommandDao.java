@@ -16,4 +16,10 @@ public interface CommandDao {
 
     @Query("SELECT * FROM commands WHERE network_id = :networkId ORDER BY timestamp_ms DESC")
     LiveData<List<CommandEntity>> getCommandsForNetwork(String networkId);
+
+    @Query("SELECT * FROM commands WHERE network_id = :networkId ORDER BY timestamp_ms DESC")
+    List<CommandEntity> getCommandsForNetworkSync(String networkId);
+
+    @Query("SELECT * FROM commands ORDER BY timestamp_ms DESC")
+    List<CommandEntity> getAllCommandsSync();
 }

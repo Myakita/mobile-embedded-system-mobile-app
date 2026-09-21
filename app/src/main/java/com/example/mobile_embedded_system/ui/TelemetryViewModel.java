@@ -28,12 +28,17 @@ import com.example.mobile_embedded_system.transport.MqttTransportManager;
 import com.example.mobile_embedded_system.domain.TacticalCommand;
 import com.example.mobile_embedded_system.domain.Waypoint;
 
+import android.util.Log;
+import com.example.mobile_embedded_system.data.local.CommandEntity;
+import com.example.mobile_embedded_system.data.local.SubjectEntity;
+import com.example.mobile_embedded_system.data.model.LMashPayload;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 /**
  * MVVM-фасад для доступа к телеметрии и сохранения состояния экрана (ТЗ §4.2).
@@ -111,6 +116,12 @@ public class TelemetryViewModel extends AndroidViewModel {
         if (networkId != null && !networkId.equals(activeNetworkId.getValue())) {
             activeNetworkId.setValue(networkId);
             mqttTransport.setNetworkConfig(networkId, "7F10/21A0");
+            if (repository.getSubjectDao() != null && repository.getExecutorService() != null) {
+                repository.getExecutorService().execute(() -> {
+                    List<SubjectEntity> subjects = repository.getSubjectDao().getSubjectsForNetworkSync(networkId);
+                    hierarchyManager.switchNetwork(networkId, subjects);
+                });
+            }
         }
     }
 
@@ -309,8 +320,17 @@ public class TelemetryViewModel extends AndroidViewModel {
 
     /**
      * Передача целеуказания подчиненному юниту (автономно + по эфиру).
+     * Валидация прав субординации по ТЗ (AC-02.2) и сохранение в БД (AC-05.3).
      */
     public boolean dispatchTargetCommand(long targetUserId, Waypoint waypoint) {
+        if (waypoint == null) return false;
+
+        // Валидация прав доступа (ACL) по AC-02.2
+        if (!hierarchyManager.isSubordinate(activeUserId, targetUserId)) {
+            Log.w("TelemetryVM", "Отказ отправки приказа: боец [" + activeUserId + "] не уполномочен командовать [" + targetUserId + "]");
+            return false;
+        }
+
         // 1. Всегда обновляем внутренний имитатор наведения
         setUnitTarget(targetUserId, waypoint.getLatitude(), waypoint.getLongitude());
 
@@ -322,16 +342,53 @@ public class TelemetryViewModel extends AndroidViewModel {
                 waypoint.getLongitude()
         );
 
-        // 3. Отправляем в эфир MQTT (если подключены)
+        // 3. Сохраняем приказ в БД (AC-05.3, DBML)
+        String netId = activeNetworkId.getValue() != null ? activeNetworkId.getValue() : "mesh-a";
+        repository.insertCommand(new CommandEntity(
+                UUID.randomUUID().toString(),
+                netId,
+                activeUserId,
+                targetUserId,
+                command.getCommandType(),
+                System.currentTimeMillis(),
+                System.currentTimeMillis()
+        ));
+
+        // 4. Отправляем в эфир MQTT (если подключены)
         return mqttTransport.publishCommand(command, activeUserId);
     }
 
     /**
      * Передача команды запроса квитанции связи (CHECK_IN) подчиненному юниту (AC-05).
+     * Валидация прав субординации по ТЗ (AC-02.2) и сохранение в БД (AC-05.3).
      */
     public boolean dispatchCheckInCommand(long targetUserId) {
+        // Валидация прав доступа (ACL) по AC-02.2
+        if (!hierarchyManager.isSubordinate(activeUserId, targetUserId)) {
+            Log.w("TelemetryVM", "Отказ отправки CHECK_IN: боец [" + activeUserId + "] не уполномочен опрашивать [" + targetUserId + "]");
+            return false;
+        }
+
         TacticalCommand command = TacticalCommand.createCheckIn(targetUserId);
+
+        // Сохраняем в БД (AC-05.3, DBML)
+        String netId = activeNetworkId.getValue() != null ? activeNetworkId.getValue() : "mesh-a";
+        repository.insertCommand(new CommandEntity(
+                UUID.randomUUID().toString(),
+                netId,
+                activeUserId,
+                targetUserId,
+                LMashPayload.CMD_CHECK_IN,
+                System.currentTimeMillis(),
+                System.currentTimeMillis()
+        ));
+
         return mqttTransport.publishCommand(command, activeUserId);
+    }
+
+    public LiveData<List<CommandEntity>> getCommandsForActiveNetwork() {
+        String netId = activeNetworkId.getValue() != null ? activeNetworkId.getValue() : "mesh-a";
+        return repository.getCommandsForNetwork(netId);
     }
 
     public LiveData<DeviceConfigEntity> getDeviceConfig(long deviceSerial) {

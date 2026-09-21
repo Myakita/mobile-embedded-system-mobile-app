@@ -154,6 +154,9 @@ public class MockTelemetryGenerator {
                                          double lat, double lon, double heading,
                                          int pulse, double temp, int pSys, int pDia, long receivedAt) {
         TelemetryEntity entity = new TelemetryEntity();
+        if (viewModel != null && viewModel.getActiveNetworkId() != null && viewModel.getActiveNetworkId().getValue() != null) {
+            entity.networkId = viewModel.getActiveNetworkId().getValue();
+        }
         entity.deviceSerial = serial;
         entity.sequence = seq;
         entity.userId = userId;

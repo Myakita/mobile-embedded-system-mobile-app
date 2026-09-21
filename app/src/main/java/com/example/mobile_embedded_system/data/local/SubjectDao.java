@@ -28,4 +28,10 @@ public interface SubjectDao {
 
     @Query("SELECT * FROM subjects WHERE network_id = :networkId")
     LiveData<List<SubjectEntity>> getSubjectsForNetwork(String networkId);
+
+    @Query("SELECT * FROM subjects WHERE network_id = :networkId")
+    List<SubjectEntity> getSubjectsForNetworkSync(String networkId);
+
+    @Query("DELETE FROM subjects WHERE network_id = :networkId")
+    void deleteForNetwork(String networkId);
 }

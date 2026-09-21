@@ -141,7 +141,54 @@ public class TelemetryRepository {
         return subjectDao;
     }
 
+    public CommandDao getCommandDao() {
+        return commandDao;
+    }
+
+    public DeviceDao getDeviceDao() {
+        return deviceDao;
+    }
+
     public ExecutorService getExecutorService() {
         return executorService;
+    }
+
+    public void insertCommand(CommandEntity command) {
+        if (commandDao != null && executorService != null && !executorService.isShutdown()) {
+            executorService.execute(() -> commandDao.insert(command));
+        }
+    }
+
+    public LiveData<List<CommandEntity>> getCommandsForNetwork(String networkId) {
+        return commandDao != null ? commandDao.getCommandsForNetwork(networkId) : null;
+    }
+
+    public List<CommandEntity> getCommandsForNetworkSync(String networkId) {
+        return commandDao != null ? commandDao.getCommandsForNetworkSync(networkId) : Collections.emptyList();
+    }
+
+    public void registerDevice(DeviceEntity device, InsertCallback callback) {
+        if (deviceDao != null && executorService != null && !executorService.isShutdown()) {
+            executorService.execute(() -> {
+                try {
+                    deviceDao.insert(device);
+                    if (callback != null) callback.onResult(true);
+                } catch (Exception e) {
+                    if (callback != null) callback.onResult(false);
+                }
+            });
+        }
+    }
+
+    public LiveData<List<DeviceEntity>> getDevicesForNetwork(String networkId) {
+        return deviceDao != null ? deviceDao.getDevicesForNetwork(networkId) : null;
+    }
+
+    public List<DeviceEntity> getDevicesForNetworkSync(String networkId) {
+        return deviceDao != null ? deviceDao.getDevicesForNetworkSync(networkId) : Collections.emptyList();
+    }
+
+    public DeviceEntity getDeviceBySerialSync(String networkId, long serial) {
+        return deviceDao != null ? deviceDao.getDeviceBySerialSync(networkId, serial) : null;
     }
 }

@@ -1,9 +1,18 @@
 package com.example.mobile_embedded_system.ui;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
@@ -142,7 +151,73 @@ public class DeviceConfigFragment extends Fragment {
         editHierarchyPath = view.findViewById(R.id.editHierarchyPath);
 
         btnApplyConfig = view.findViewById(R.id.btnApplyConfig);
-        btnApplyConfig.setOnClickListener(v -> applyAndTransmitConfig());
+        setupHoldToConfirm();
+    }
+
+    private final Handler holdHandler = new Handler(Looper.getMainLooper());
+    private boolean isHolding = false;
+    private static final long HOLD_DURATION_MS = 1500L;
+
+    @SuppressLint("ClickableViewAccessibility")
+    private void setupHoldToConfirm() {
+        btnApplyConfig.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    isHolding = true;
+                    btnApplyConfig.setText("УДЕРЖИВАЙТЕ ДЛЯ ЗАПИСИ (1.5с)...");
+                    btnApplyConfig.setBackgroundColor(getResources().getColor(R.color.status_warning));
+                    btnApplyConfig.setTextColor(getResources().getColor(R.color.ink));
+                    triggerTactileFeedback(80);
+
+                    holdHandler.postDelayed(() -> {
+                        if (isHolding) {
+                            isHolding = false;
+                            btnApplyConfig.setText("ЗАПИСЬ ВЫПОЛНЕНА");
+                            btnApplyConfig.setBackgroundColor(getResources().getColor(R.color.status_ok));
+                            btnApplyConfig.setTextColor(getResources().getColor(R.color.ink));
+                            triggerTactileFeedback(250);
+                            applyAndTransmitConfig();
+                            btnApplyConfig.postDelayed(this::resetApplyButtonState, 1500L);
+                        }
+                    }, HOLD_DURATION_MS);
+                    return true;
+
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    if (isHolding) {
+                        isHolding = false;
+                        holdHandler.removeCallbacksAndMessages(null);
+                        resetApplyButtonState();
+                    }
+                    return true;
+            }
+            return false;
+        });
+    }
+
+    private void resetApplyButtonState() {
+        if (btnApplyConfig == null || !isAdded()) return;
+        btnApplyConfig.setText("ЗАПИСАТЬ КОНФИГУРАЦИЮ [УДЕРЖАНИЕ 1.5с]");
+        TypedValue tvInk = new TypedValue();
+        TypedValue tvSurface = new TypedValue();
+        requireContext().getTheme().resolveAttribute(R.attr.appInk, tvInk, true);
+        requireContext().getTheme().resolveAttribute(R.attr.appSurface, tvSurface, true);
+        btnApplyConfig.setBackgroundColor(tvInk.data);
+        btnApplyConfig.setTextColor(tvSurface.data);
+    }
+
+    @SuppressLint("MissingPermission")
+    private void triggerTactileFeedback(long ms) {
+        try {
+            Vibrator vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE);
+            if (vibrator != null && vibrator.hasVibrator()) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE));
+                } else {
+                    vibrator.vibrate(ms);
+                }
+            }
+        } catch (Exception ignored) {}
     }
 
     private void bindDataToViews() {
@@ -242,7 +317,13 @@ public class DeviceConfigFragment extends Fragment {
         try {
             currentConfig.setDeviceSerial(Long.parseLong(editDeviceSerial.getText().toString().trim()));
             currentConfig.setUserId(Long.parseLong(editUserId.getText().toString().trim()));
-            currentConfig.setTelemetryPeriodSec(Integer.parseInt(editPeriodSec.getText().toString().trim()));
+            int periodSec = Integer.parseInt(editPeriodSec.getText().toString().trim());
+            if (!DeviceConfigModel.isValidTelemetryPeriod(periodSec)) {
+                throw new IllegalArgumentException("Период передачи телеметрии должен быть от "
+                        + DeviceConfigModel.MIN_TELEMETRY_PERIOD_SEC + " до "
+                        + DeviceConfigModel.MAX_TELEMETRY_PERIOD_SEC + " секунд (ТЗ §18.1)");
+            }
+            currentConfig.setTelemetryPeriodSec(periodSec);
 
             currentConfig.setTempEnabled(checkTemp.isChecked());
             currentConfig.setPulseEnabled(checkPulse.isChecked());

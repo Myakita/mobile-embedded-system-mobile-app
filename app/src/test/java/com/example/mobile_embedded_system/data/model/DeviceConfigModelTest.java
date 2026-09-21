@@ -1,6 +1,7 @@
 package com.example.mobile_embedded_system.data.model;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -54,5 +55,23 @@ public class DeviceConfigModelTest {
 
         config.setSyncState(ConfigSyncState.APPLIED);
         assertEquals("Применено", config.getSyncState().getDescription());
+    }
+
+    @Test
+    public void testTelemetryPeriodAndKeyValidation() {
+        // ТЗ §18.1: диапазон от 5 до 300 секунд
+        assertFalse(DeviceConfigModel.isValidTelemetryPeriod(0));
+        assertFalse(DeviceConfigModel.isValidTelemetryPeriod(4));
+        assertTrue(DeviceConfigModel.isValidTelemetryPeriod(5));
+        assertTrue(DeviceConfigModel.isValidTelemetryPeriod(60));
+        assertTrue(DeviceConfigModel.isValidTelemetryPeriod(300));
+        assertFalse(DeviceConfigModel.isValidTelemetryPeriod(301));
+
+        // Валидация криптографических ключей (16 или 32 байта)
+        assertFalse(DeviceConfigModel.isValidKeyLength(null));
+        assertFalse(DeviceConfigModel.isValidKeyLength(new byte[8]));
+        assertTrue(DeviceConfigModel.isValidKeyLength(new byte[16]));
+        assertTrue(DeviceConfigModel.isValidKeyLength(new byte[32]));
+        assertFalse(DeviceConfigModel.isValidKeyLength(new byte[64]));
     }
 }

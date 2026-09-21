@@ -43,6 +43,8 @@ public class LMashPayload {
     private int positionQuality;
 
     public LMashPayload() {
+        this.version = 1;
+        this.ttl = 4;
     }
 
     public static LMashPayload fromBytes(byte[] bytes) {

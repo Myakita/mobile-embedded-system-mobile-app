@@ -22,7 +22,9 @@ import com.example.mobile_embedded_system.data.local.TelemetryEntity;
 import com.example.mobile_embedded_system.domain.HierarchyNode;
 import com.example.mobile_embedded_system.domain.UnitHierarchyManager;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -77,11 +79,69 @@ public class HierarchyFragment extends Fragment {
 
             @Override
             public void onNodeLongClick(HierarchyNode node) {
-                showDeleteNodeDialog(node);
+                showNodeActionsDialog(node);
             }
         });
 
         recyclerView.setAdapter(adapter);
+    }
+
+    private void showNodeActionsDialog(HierarchyNode node) {
+        CharSequence[] actions = new CharSequence[]{"Переместить узел...", "Удалить узел"};
+        new AlertDialog.Builder(requireContext())
+                .setTitle("ДЕЙСТВИЕ: " + node.getName())
+                .setItems(actions, (dialog, which) -> {
+                    if (which == 0) {
+                        showMoveNodeDialog(node);
+                    } else if (which == 1) {
+                        showDeleteNodeDialog(node);
+                    }
+                })
+                .setNegativeButton("ОТМЕНА", null)
+                .show();
+    }
+
+    private void showMoveNodeDialog(HierarchyNode node) {
+        List<HierarchyNode> allNodes = new ArrayList<>();
+        collectAllNodesRecursive(hierarchyManager.getRootNodes(), allNodes);
+
+        List<String> options = new ArrayList<>();
+        List<Long> parentIds = new ArrayList<>();
+
+        options.add("── Корень (верхний уровень) ──");
+        parentIds.add(null);
+
+        for (HierarchyNode candidate : allNodes) {
+            if (candidate.getId() != node.getId() && candidate.getType() != HierarchyNode.NodeType.SOLDIER) {
+                options.add("[" + candidate.getType() + "] " + candidate.getName());
+                parentIds.add(candidate.getId());
+            }
+        }
+
+        CharSequence[] items = options.toArray(new CharSequence[0]);
+        new AlertDialog.Builder(requireContext())
+                .setTitle("ПЕРЕМЕСТИТЬ: " + node.getName())
+                .setItems(items, (dialog, which) -> {
+                    Long targetParentId = parentIds.get(which);
+                    try {
+                        hierarchyManager.moveNode(node.getId(), targetParentId);
+                        if (adapter != null) {
+                            adapter.updateData();
+                        }
+                        Toast.makeText(requireContext(), "УЗЕЛ УСПЕШНО ПЕРЕМЕЩЕН", Toast.LENGTH_SHORT).show();
+                    } catch (IllegalArgumentException e) {
+                        Toast.makeText(requireContext(), "ОТКАЗ: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                })
+                .setNegativeButton("ОТМЕНА", null)
+                .show();
+    }
+
+    private void collectAllNodesRecursive(List<HierarchyNode> nodes, List<HierarchyNode> out) {
+        for (HierarchyNode n : nodes) {
+            out.add(n);
+            collectAllNodesRecursive(n.getChildren(), out);
+        }
     }
 
     private void observeSquadTelemetry() {

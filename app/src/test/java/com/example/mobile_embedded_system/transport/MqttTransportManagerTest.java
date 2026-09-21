@@ -112,6 +112,39 @@ public class MqttTransportManagerTest {
         assertEquals(0, mockDao.inserted.size());
     }
 
+    @Test
+    public void testTtlZeroPacketDropped() {
+        LMashPayload payload = new LMashPayload();
+        payload.setMessageType(LMashPayload.MSG_TELEMETRY);
+        payload.setDeviceSerial(998811L);
+        payload.setSequence(1L);
+        payload.setTtl(0); // TTL expired
+
+        byte[] binaryPacket = payload.toBytes();
+        transportManager.processIncomingMessage("unit/telemetry/1002", binaryPacket);
+
+        assertEquals(0, mockDao.inserted.size());
+    }
+
+    @Test
+    public void testInMemoryDeduplication() {
+        LMashPayload payload = new LMashPayload();
+        payload.setMessageType(LMashPayload.MSG_TELEMETRY);
+        payload.setDeviceSerial(555555L);
+        payload.setSequence(10L);
+        payload.setTtl(3);
+
+        byte[] binaryPacket = payload.toBytes();
+
+        // Первая доставка: успешно вставляется
+        transportManager.processIncomingMessage("unit/telemetry/1002", binaryPacket);
+        assertEquals(1, mockDao.inserted.size());
+
+        // Вторая доставка того же пакета: отбрасывается LRU дедупликацией
+        transportManager.processIncomingMessage("unit/telemetry/1002", binaryPacket);
+        assertEquals(1, mockDao.inserted.size());
+    }
+
     private static class MockDao implements TelemetryDao {
         final List<TelemetryEntity> inserted = new ArrayList<>();
 

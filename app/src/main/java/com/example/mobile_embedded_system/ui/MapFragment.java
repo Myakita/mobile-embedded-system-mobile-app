@@ -22,6 +22,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -128,9 +129,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private View bannerEmergency;
     private TextView textEmergencyTitle;
 
-    private TextView btnUnit1001;
-    private TextView btnUnit1002;
-    private TextView btnUnit1003;
+    private ViewGroup containerUnitButtons;
+    private final java.util.Set<Long> observedSquadUserIds = new java.util.HashSet<>();
 
     private int currentThemeMode;
     private TextView textGpsStatus;
@@ -214,6 +214,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             }
         });
 
+        viewModel.getActiveNetworkId().observe(getViewLifecycleOwner(), netId -> {
+            setupSquadButtons();
+            updateSquadButtonsUI();
+            if (maplibreMap != null) {
+                observeSquadTelemetry();
+            }
+        });
+
         mapView.getMapAsync(this);
     }
 
@@ -254,9 +262,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             }
         });
 
-        btnUnit1001 = requireView().findViewById(R.id.btnUnit1001);
-        btnUnit1002 = requireView().findViewById(R.id.btnUnit1002);
-        btnUnit1003 = requireView().findViewById(R.id.btnUnit1003);
+        containerUnitButtons = requireView().findViewById(R.id.containerUnitButtons);
 
         requireView().findViewById(R.id.panelTelemetry).setOnClickListener(v -> snapCameraToActiveUnit());
 
@@ -265,9 +271,41 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void setupSquadButtons() {
-        btnUnit1001.setOnClickListener(v -> selectActiveUnit(1001L));
-        btnUnit1002.setOnClickListener(v -> selectActiveUnit(1002L));
-        btnUnit1003.setOnClickListener(v -> selectActiveUnit(1003L));
+        if (containerUnitButtons == null) return;
+        containerUnitButtons.removeAllViews();
+
+        List<Long> unitIds = viewModel.getSquadUserIds();
+        int inkColor = resolveThemeColor(R.attr.appInk);
+        int bgColor = resolveThemeColor(R.attr.appBg);
+
+        for (int i = 0; i < unitIds.size(); i++) {
+            long uid = unitIds.get(i);
+            TextView btn = new TextView(requireContext());
+            btn.setTextAppearance(requireContext(), R.style.Text_Label);
+            btn.setText(viewModel.getCallsignForUser(uid));
+            btn.setGravity(android.view.Gravity.CENTER);
+            btn.setBackgroundColor(bgColor);
+            btn.setTextColor(inkColor);
+            btn.setPadding(dpToPx(8), 0, dpToPx(8), 0);
+            btn.setTag(uid);
+
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+            );
+            lp.setMarginEnd(dpToPx(4));
+            btn.setLayoutParams(lp);
+            btn.setMinWidth(dpToPx(64));
+
+            btn.setOnClickListener(v -> selectActiveUnit(uid));
+            containerUnitButtons.addView(btn);
+        }
+    }
+
+    private int dpToPx(int dp) {
+        return (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, dp, getResources().getDisplayMetrics()
+        );
     }
 
     private void toggleMapOrientation() {
@@ -318,13 +356,18 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void updateSquadButtonsUI() {
+        if (containerUnitButtons == null) return;
         int inkColor = resolveThemeColor(R.attr.appInk);
         int surfaceColor = resolveThemeColor(R.attr.appSurface);
         int bgColor = resolveThemeColor(R.attr.appBg);
 
-        applyButtonStyle(btnUnit1001, activeUserId == 1001L, inkColor, surfaceColor, bgColor, inkColor);
-        applyButtonStyle(btnUnit1002, activeUserId == 1002L, inkColor, surfaceColor, bgColor, inkColor);
-        applyButtonStyle(btnUnit1003, activeUserId == 1003L, inkColor, surfaceColor, bgColor, inkColor);
+        for (int i = 0; i < containerUnitButtons.getChildCount(); i++) {
+            View child = containerUnitButtons.getChildAt(i);
+            if (child instanceof TextView && child.getTag() instanceof Long) {
+                long uid = (Long) child.getTag();
+                applyButtonStyle((TextView) child, activeUserId == uid, inkColor, surfaceColor, bgColor, inkColor);
+            }
+        }
     }
 
     private void setupThemeButtons() {
@@ -564,7 +607,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void observeSquadTelemetry() {
+        long thirtyMinAgoSec = (System.currentTimeMillis() / 1000L) - 1800L;
         for (long userId : viewModel.getSquadUserIds()) {
+            if (observedSquadUserIds.contains(userId)) {
+                continue;
+            }
+            observedSquadUserIds.add(userId);
+
             viewModel.getLatestTelemetry(userId).observe(getViewLifecycleOwner(), entity -> {
                 if (entity == null || maplibreMap == null) {
                     return;
@@ -596,7 +645,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 }
             });
 
-            viewModel.getHistory(userId, 0L).observe(getViewLifecycleOwner(), history -> {
+            viewModel.getHistory(userId, thirtyMinAgoSec).observe(getViewLifecycleOwner(), history -> {
                 if (history == null || maplibreMap == null || history.isEmpty()) {
                     return;
                 }
@@ -674,11 +723,24 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void updateUnitMarker(TelemetryEntity entity) {
-        LatLng position = new LatLng(entity.latitude, entity.longitude);
+        if (entity == null) return;
 
         long nowSec = System.currentTimeMillis() / 1000L;
         PositionStatusEvaluator.PositionState posState = PositionStatusEvaluator.evaluate(entity, nowSec);
-        boolean isStale = (posState == PositionStatusEvaluator.PositionState.STALE || posState == PositionStatusEvaluator.PositionState.UNKNOWN);
+
+        // Устранение артефакта "Нулевого острова" (0°, 0°) и статуса UNKNOWN (AC-01 / ТЗ §6.10)
+        boolean isZeroCoord = (Math.abs(entity.latitude) < 0.0001 && Math.abs(entity.longitude) < 0.0001);
+        if (posState == PositionStatusEvaluator.PositionState.UNKNOWN || isZeroCoord) {
+            Marker existing = tacticalMarkers.remove(entity.userId);
+            if (existing != null && maplibreMap != null) {
+                maplibreMap.removeMarker(existing);
+            }
+            return;
+        }
+
+        LatLng position = new LatLng(entity.latitude, entity.longitude);
+
+        boolean isStale = (posState == PositionStatusEvaluator.PositionState.STALE);
         int statusColor = isStale ? resolveThemeColor(R.attr.appInk2) : resolveUnitStatusColor(entity);
 
         boolean isActive = (entity.userId == activeUserId);
@@ -708,9 +770,21 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void updateUnitTrack(long userId, List<TelemetryEntity> history) {
+        if (history == null || maplibreMap == null) return;
+
         List<LatLng> points = new ArrayList<>(history.size());
         for (TelemetryEntity item : history) {
-            points.add(new LatLng(item.latitude, item.longitude));
+            if (Math.abs(item.latitude) >= 0.0001 || Math.abs(item.longitude) >= 0.0001) {
+                points.add(new LatLng(item.latitude, item.longitude));
+            }
+        }
+
+        if (points.isEmpty()) {
+            Polyline existing = tacticalTracks.remove(userId);
+            if (existing != null) {
+                maplibreMap.removePolyline(existing);
+            }
+            return;
         }
 
         int trackColor = resolveThemeColor(R.attr.appHairline);
@@ -877,6 +951,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         waypointMarkers.clear();
         tacticalTracks.clear();
         rangeRingPolylines.clear();
+        observedSquadUserIds.clear();
         if (mapView != null) {
             mapView.onDestroy();
             mapView = null;
@@ -928,18 +1003,33 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         long ageSec = PositionStatusEvaluator.calculateAgeSeconds(entity, nowSec);
         DeviceStatusEvaluator.GnssState state = DeviceStatusEvaluator.evaluateGnss(entity.positionQuality);
 
+        String fixLabel;
+        int fixColor;
+        switch (state) {
+            case FIX_3D:
+                fixLabel = "3D FIX";
+                fixColor = resolveThemeColor(R.attr.appStatusOk);
+                break;
+            case FIX_2D:
+                fixLabel = "2D FIX";
+                fixColor = resolveThemeColor(R.attr.appStatusWarning);
+                break;
+            case NO_FIX:
+            default:
+                fixLabel = "NO FIX";
+                fixColor = resolveThemeColor(R.attr.appStatusCritical);
+                break;
+        }
+
         if (posState == PositionStatusEvaluator.PositionState.STALE) {
-            textGpsStatus.setText(String.format(Locale.US, "ГНСС: УСТАРЕЛО (%dс)", ageSec));
+            textGpsStatus.setText(String.format(Locale.US, "ГНСС: %s [УСТАРЕЛО %dс]", fixLabel, ageSec));
             textGpsStatus.setTextColor(resolveThemeColor(R.attr.appStatusWarning));
-        } else if (posState == PositionStatusEvaluator.PositionState.UNKNOWN || state == DeviceStatusEvaluator.GnssState.NO_FIX) {
-            textGpsStatus.setText("ГНСС: НЕТ СВЯЗИ");
+        } else if (posState == PositionStatusEvaluator.PositionState.UNKNOWN) {
+            textGpsStatus.setText(String.format(Locale.US, "ГНСС: %s [НЕТ ДАННЫХ]", fixLabel));
             textGpsStatus.setTextColor(resolveThemeColor(R.attr.appStatusCritical));
-        } else if (state == DeviceStatusEvaluator.GnssState.FIX_3D) {
-            textGpsStatus.setText("ГНСС: 3D FIX");
-            textGpsStatus.setTextColor(resolveThemeColor(R.attr.appStatusOk));
         } else {
-            textGpsStatus.setText("ГНСС: 2D FIX");
-            textGpsStatus.setTextColor(resolveThemeColor(R.attr.appStatusWarning));
+            textGpsStatus.setText(String.format(Locale.US, "ГНСС: %s", fixLabel));
+            textGpsStatus.setTextColor(fixColor);
         }
     }
 

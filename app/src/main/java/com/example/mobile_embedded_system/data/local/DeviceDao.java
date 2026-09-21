@@ -14,6 +14,18 @@ public interface DeviceDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(DeviceEntity device);
 
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    long insertWithAbort(DeviceEntity device);
+
     @Query("SELECT * FROM devices WHERE network_id = :networkId")
     LiveData<List<DeviceEntity>> getDevicesForNetwork(String networkId);
+
+    @Query("SELECT * FROM devices WHERE network_id = :networkId")
+    List<DeviceEntity> getDevicesForNetworkSync(String networkId);
+
+    @Query("SELECT * FROM devices WHERE network_id = :networkId AND serial = :serial LIMIT 1")
+    DeviceEntity getDeviceBySerialSync(String networkId, long serial);
+
+    @Query("DELETE FROM devices WHERE id = :id")
+    void deleteById(String id);
 }

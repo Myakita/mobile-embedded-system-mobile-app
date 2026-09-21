@@ -8,6 +8,7 @@ import com.example.mobile_embedded_system.domain.network.MqttTopicBuilder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
@@ -33,6 +34,7 @@ public class UnitHierarchyManager {
     private final Executor executor;
     private final List<HierarchyNode> rootNodes = new ArrayList<>();
     private long nextNodeId = 100L;
+    private String currentNetworkId = "mesh-a";
 
     public UnitHierarchyManager() {
         this(null, null);
@@ -87,7 +89,7 @@ public class UnitHierarchyManager {
         if (subjectDao == null) return;
         List<SubjectEntity> entities = new ArrayList<>();
         collectEntitiesRecursive(rootNodes, entities);
-        subjectDao.deleteAll();
+        subjectDao.deleteForNetwork(this.currentNetworkId);
         subjectDao.insertAll(entities);
     }
 
@@ -95,8 +97,8 @@ public class UnitHierarchyManager {
         for (HierarchyNode n : nodes) {
             out.add(new SubjectEntity(
                     String.valueOf(n.getId()),
-                    "mesh-a",
-                    n.getUserId() != null ? n.getUserId() : 0L,
+                    this.currentNetworkId,
+                    n.getUserId(),
                     n.getName(),
                     n.getParentId() != null ? String.valueOf(n.getParentId()) : null,
                     n.getType().name(),
@@ -124,7 +126,7 @@ public class UnitHierarchyManager {
                     } catch (Exception ignored) {}
                 }
                 Long parentId = entity.parentId != null ? Long.parseLong(entity.parentId) : null;
-                Long userId = entity.userId > 0 ? entity.userId : null;
+                Long userId = (entity.userId != null && entity.userId > 0) ? entity.userId : null;
                 HierarchyNode node = new HierarchyNode(id, entity.name, type, parentId, userId, entity.hierarchyPath);
                 nodeMap.put(id, node);
             } catch (Exception ignored) {}
@@ -199,9 +201,75 @@ public class UnitHierarchyManager {
         return null;
     }
 
+    public synchronized String getCurrentNetworkId() {
+        return currentNetworkId;
+    }
+
+    public synchronized void setCurrentNetworkId(String networkId) {
+        this.currentNetworkId = networkId != null ? networkId : "mesh-a";
+    }
+
+    public synchronized void switchNetwork(String networkId, List<SubjectEntity> subjects) {
+        this.currentNetworkId = networkId != null ? networkId : "mesh-a";
+        rootNodes.clear();
+        if (subjects != null && !subjects.isEmpty()) {
+            reconstructFromDb(subjects);
+        } else {
+            initDefaultHierarchy();
+            if (subjectDao != null && executor != null) {
+                executor.execute(this::saveAllToDbSync);
+            }
+        }
+    }
+
+    public synchronized boolean isDescendant(long ancestorId, long checkId) {
+        HierarchyNode ancestor = findNodeById(ancestorId);
+        if (ancestor == null) return false;
+        return isDescendantRecursive(ancestor.getChildren(), checkId);
+    }
+
+    private boolean isDescendantRecursive(List<HierarchyNode> children, long checkId) {
+        for (HierarchyNode child : children) {
+            if (child.getId() == checkId) return true;
+            if (isDescendantRecursive(child.getChildren(), checkId)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Валидация прав командного управления по иерархии (AC-02.2).
+     * Разрешено, если target находится в поддереве superior или superior является командиром отделения.
+     */
+    public synchronized boolean isSubordinate(long superiorUserId, long targetUserId) {
+        if (superiorUserId == targetUserId) {
+            return true;
+        }
+        HierarchyNode superiorNode = findNodeByUserId(superiorUserId);
+        HierarchyNode targetNode = findNodeByUserId(targetUserId);
+        if (superiorNode == null || targetNode == null) {
+            return false;
+        }
+        if (isDescendant(superiorNode.getId(), targetNode.getId())) {
+            return true;
+        }
+        if (superiorNode.getParentId() != null && superiorNode.getParentId().equals(targetNode.getParentId())) {
+            if (superiorNode.getName().toLowerCase(Locale.ROOT).contains("командир") || superiorUserId == 1001L) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public synchronized HierarchyNode addNode(String name, HierarchyNode.NodeType type, Long parentId, Long userId) {
+        HierarchyNode parent = null;
+        if (parentId != null) {
+            parent = findNodeById(parentId);
+            if (parent == null) {
+                throw new IllegalArgumentException("Родительский узел не найден: " + parentId);
+            }
+        }
+
         long id = nextNodeId++;
-        HierarchyNode parent = parentId != null ? findNodeById(parentId) : null;
         String path;
         if (parent != null) {
             path = parent.getHierarchyPath() + "/" + (userId != null ? userId : id);
@@ -220,8 +288,8 @@ public class UnitHierarchyManager {
                 try {
                     subjectDao.insert(new SubjectEntity(
                             String.valueOf(node.getId()),
-                            "mesh-a",
-                            node.getUserId() != null ? node.getUserId() : 0L,
+                            this.currentNetworkId,
+                            node.getUserId(),
                             node.getName(),
                             node.getParentId() != null ? String.valueOf(node.getParentId()) : null,
                             node.getType().name(),
@@ -232,6 +300,41 @@ public class UnitHierarchyManager {
         }
 
         return node;
+    }
+
+    /**
+     * Перемещение узла с контролем циклических зависимостей (AC-02.1).
+     */
+    public synchronized boolean moveNode(long nodeId, Long newParentId) {
+        HierarchyNode node = findNodeById(nodeId);
+        if (node == null) return false;
+
+        if (newParentId != null) {
+            if (newParentId == nodeId || isDescendant(nodeId, newParentId)) {
+                throw new IllegalArgumentException("Циклическая иерархия отклонена (AC-02.1)");
+            }
+            HierarchyNode newParent = findNodeById(newParentId);
+            if (newParent == null) {
+                throw new IllegalArgumentException("Новый родительский узел не найден: " + newParentId);
+            }
+        }
+
+        removeNodeRecursive(rootNodes, nodeId);
+        node.setParentId(newParentId);
+
+        if (newParentId != null) {
+            HierarchyNode parent = findNodeById(newParentId);
+            parent.addChild(node);
+            node.setHierarchyPath(parent.getHierarchyPath() + "/" + (node.getUserId() != null ? node.getUserId() : node.getId()));
+        } else {
+            rootNodes.add(node);
+            node.setHierarchyPath("NODE_" + node.getId());
+        }
+
+        if (subjectDao != null && executor != null) {
+            executor.execute(this::saveAllToDbSync);
+        }
+        return true;
     }
 
     public synchronized boolean removeNode(long id) {

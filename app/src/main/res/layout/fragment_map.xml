@@ -154,53 +154,64 @@
         android:orientation="vertical"
         android:padding="@dimen/space_8">
 
-        <!-- Селектор бойцов группы (ТЗ §6.6, §6.8) -->
-        <LinearLayout
+        <!-- Селектор бойцов группы (ТЗ §6.6, §6.8, Part D) -->
+        <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="28dp"
-            android:orientation="horizontal">
+            android:scrollbars="none"
+            android:fillViewport="true">
 
-            <TextView
-                android:id="@+id/btnUnit1001"
-                style="@style/Text.Label"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:id="@+id/containerUnitButtons"
+                android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="?attr/appBg"
-                android:gravity="center"
-                android:text="[1001] КМД"
-                android:textColor="?attr/appInk" />
+                android:orientation="horizontal">
 
-            <View
-                android:layout_width="@dimen/space_4"
-                android:layout_height="match_parent" />
+                <TextView
+                    android:id="@+id/btnUnit1001"
+                    style="@style/Text.Label"
+                    android:layout_width="wrap_content"
+                    android:minWidth="64dp"
+                    android:layout_height="match_parent"
+                    android:background="?attr/appBg"
+                    android:gravity="center"
+                    android:paddingHorizontal="@dimen/space_8"
+                    android:text="[1001] КМД"
+                    android:textColor="?attr/appInk" />
 
-            <TextView
-                android:id="@+id/btnUnit1002"
-                style="@style/Text.Label"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="?attr/appBg"
-                android:gravity="center"
-                android:text="[1002] СТР"
-                android:textColor="?attr/appInk" />
+                <View
+                    android:layout_width="@dimen/space_4"
+                    android:layout_height="match_parent" />
 
-            <View
-                android:layout_width="@dimen/space_4"
-                android:layout_height="match_parent" />
+                <TextView
+                    android:id="@+id/btnUnit1002"
+                    style="@style/Text.Label"
+                    android:layout_width="wrap_content"
+                    android:minWidth="64dp"
+                    android:layout_height="match_parent"
+                    android:background="?attr/appBg"
+                    android:gravity="center"
+                    android:paddingHorizontal="@dimen/space_8"
+                    android:text="[1002] СТР"
+                    android:textColor="?attr/appInk" />
 
-            <TextView
-                android:id="@+id/btnUnit1003"
-                style="@style/Text.Label"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="?attr/appBg"
-                android:gravity="center"
-                android:text="[1003] САН"
-                android:textColor="?attr/appInk" />
-        </LinearLayout>
+                <View
+                    android:layout_width="@dimen/space_4"
+                    android:layout_height="match_parent" />
+
+                <TextView
+                    android:id="@+id/btnUnit1003"
+                    style="@style/Text.Label"
+                    android:layout_width="wrap_content"
+                    android:minWidth="64dp"
+                    android:layout_height="match_parent"
+                    android:background="?attr/appBg"
+                    android:gravity="center"
+                    android:paddingHorizontal="@dimen/space_8"
+                    android:text="[1003] САН"
+                    android:textColor="?attr/appInk" />
+            </LinearLayout>
+        </HorizontalScrollView>
 
         <!-- Заголовок активного бойца и индикатор статуса -->
         <LinearLayout
