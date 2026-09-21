@@ -3,23 +3,71 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/appBg"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:orientation="vertical">
 
-    <TextView
-        style="@style/Text.Label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="ИЕРАРХИЯ И ПРАВИЛА ОБМЕНА (ACL)"
-        android:textSize="14sp" />
+    <!-- Заголовок модуля (§6.5) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:background="?attr/appSurface"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
 
+        <TextView
+            style="@style/Text.Label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="── ИЕРАРХИЯ ПОДРАЗДЕЛЕНИЙ И MQTT ACL ──"
+            android:textColor="?attr/appInk"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btnAddNode"
+            style="@style/Text.Label"
+            android:layout_width="wrap_content"
+            android:layout_height="28dp"
+            android:background="?attr/appInk"
+            android:gravity="center"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:text="+ УЗЕЛ"
+            android:textColor="?attr/appSurface"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/appHairline" />
+
+    <!-- Информационная плашка об автогенеренных топиках -->
     <TextView
         style="@style/Text.Value"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Модуль управления деревом и маршрутизацией топиков"
+        android:background="?attr/appBg"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:text="При изменении иерархии маршрутные топики &lt;network_root&gt;/&lt;hierarchy_path&gt;/# пересчитываются автоматически."
         android:textColor="?attr/appInk2"
-        android:textSize="12sp" />
+        android:textSize="11sp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/appHairline" />
+
+    <!-- Дерево иерархии -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerHierarchy"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="12dp" />
+
 </LinearLayout>

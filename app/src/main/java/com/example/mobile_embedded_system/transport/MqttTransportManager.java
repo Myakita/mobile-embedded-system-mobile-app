@@ -4,10 +4,13 @@ import android.util.Log;
 
 import com.example.mobile_embedded_system.data.TelemetryRepository;
 import com.example.mobile_embedded_system.data.local.TelemetryEntity;
+import com.example.mobile_embedded_system.data.model.DeviceConfigModel;
 import com.example.mobile_embedded_system.data.model.LMashPayload;
 import com.example.mobile_embedded_system.data.model.PacketDiagnosticsModel;
 import com.example.mobile_embedded_system.domain.network.MqttTopicBuilder;
 import com.example.mobile_embedded_system.domain.TacticalCommand;
+import com.example.mobile_embedded_system.security.CryptoException;
+import com.example.mobile_embedded_system.security.KeyStoreManager;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
@@ -17,6 +20,9 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -26,11 +32,14 @@ public class MqttTransportManager {
 
     private static final String TAG = "MqttTransport";
 
+    public static final byte FLAG_ENCRYPTED = 0x01;
+
     // Настройки сети (ТЗ §1.40) - временно хардкод для MVP P0
     private String networkRoot = "mesh-a";
     private String hierarchyPath = "7F10/21A0";
 
     private final TelemetryRepository repository;
+    private final KeyStoreManager keyStoreManager;
     private final AtomicLong commandSequence = new AtomicLong(1L);
     private final PacketDiagnosticsModel diagnosticsModel =
             new PacketDiagnosticsModel();
@@ -44,7 +53,12 @@ public class MqttTransportManager {
     }
 
     public MqttTransportManager(TelemetryRepository repository) {
+        this(repository, new KeyStoreManager());
+    }
+
+    public MqttTransportManager(TelemetryRepository repository, KeyStoreManager keyStoreManager) {
         this.repository = repository;
+        this.keyStoreManager = (keyStoreManager != null) ? keyStoreManager : new KeyStoreManager();
     }
 
     public void setNetworkConfig(String root, String path) {
@@ -130,7 +144,7 @@ public class MqttTransportManager {
     }
 
     /**
-     * Обработка входящего бинарного пакета (P0 исправление 54-байтового формата).
+     * Обработка входящего бинарного пакета с проверкой конверта шифрования (ТЗ §14, MVP §12.60–12.69).
      */
     public void processIncomingMessage(String topic, byte[] payloadBytes) {
         if (payloadBytes == null || payloadBytes.length < LMashPayload.PAYLOAD_SIZE) {
@@ -141,8 +155,33 @@ public class MqttTransportManager {
 
         diagnosticsModel.incrementTotalPackets();
 
+        byte[] unencryptedBytes = payloadBytes;
+
+        // Проверка конверта шифрования: [1 байт флагов (0x01 = ENCRYPTED)][8 байт keyId][IV + CipherText]
+        if (payloadBytes.length > LMashPayload.PAYLOAD_SIZE && (payloadBytes[0] & FLAG_ENCRYPTED) != 0) {
+            try {
+                ByteBuffer bb = ByteBuffer.wrap(payloadBytes, 1, 8);
+                bb.order(ByteOrder.LITTLE_ENDIAN);
+                long keyId = bb.getLong();
+
+                byte[] encryptedBody = new byte[payloadBytes.length - 9];
+                System.arraycopy(payloadBytes, 9, encryptedBody, 0, encryptedBody.length);
+
+                unencryptedBytes = keyStoreManager.decrypt(keyId, encryptedBody);
+                Log.d(TAG, "Успешно расшифрован пакет по keyId=" + keyId);
+            } catch (CryptoException ce) {
+                diagnosticsModel.incrementDecryptionErrors();
+                Log.e(TAG, "Ошибка расшифрования пакета (" + ce.getErrorCode().getDescription() + "): " + ce.getMessage());
+                return;
+            } catch (Exception e) {
+                diagnosticsModel.incrementMalformedPackets();
+                Log.e(TAG, "Ошибка разбора конверта шифрования пакета", e);
+                return;
+            }
+        }
+
         try {
-            LMashPayload payload = LMashPayload.fromBytes(payloadBytes);
+            LMashPayload payload = LMashPayload.fromBytes(unencryptedBytes);
             if (payload.isTelemetry()) {
                 diagnosticsModel.incrementTelemetryPackets();
             } else if (payload.isCommand()) {
@@ -152,8 +191,14 @@ public class MqttTransportManager {
             }
 
             TelemetryEntity entity = convertToEntity(payload);
-            repository.insert(entity);
-            Log.d(TAG, "Телеметрия сохранена от бойца [" + entity.userId + "], seq=" + entity.sequence);
+            repository.insert(entity, inserted -> {
+                if (!inserted) {
+                    diagnosticsModel.incrementDuplicatesDropped();
+                    Log.d(TAG, "Отброшен дубликат пакета [" + entity.deviceSerial + "], seq=" + entity.sequence);
+                } else {
+                    Log.d(TAG, "Телеметрия сохранена от бойца [" + entity.userId + "], seq=" + entity.sequence);
+                }
+            });
         } catch (IllegalArgumentException e) {
             diagnosticsModel.incrementMalformedPackets();
             Log.e(TAG, "Ошибка декодирования бинарного пакета телеметрии", e);
@@ -209,9 +254,13 @@ public class MqttTransportManager {
     }
 
     /**
-     * Публикация командного пакета в бинарном виде LMashPayload (ТЗ §4.1, P0 исправление).
+     * Публикация командного пакета в бинарном виде LMashPayload (ТЗ §4.1, §14).
      */
     public boolean publishCommand(TacticalCommand command, long sourceId) {
+        return publishCommand(command, sourceId, 0L);
+    }
+
+    public boolean publishCommand(TacticalCommand command, long sourceId, long keyId) {
         if (mqttClient == null || !mqttClient.isConnected()) {
             return false;
         }
@@ -223,8 +272,20 @@ public class MqttTransportManager {
         try {
             long nextSequence = commandSequence.getAndIncrement();
             LMashPayload payload = command.toLMashPayload(nextSequence, sourceId);
+            byte[] payloadBytes = payload.toBytes();
 
-            MqttMessage message = new MqttMessage(payload.toBytes());
+            if (keyId != 0L && keyStoreManager.getProfile(keyId) != null) {
+                byte[] encryptedBody = keyStoreManager.encrypt(keyId, payloadBytes);
+                ByteBuffer envelope = ByteBuffer.allocate(1 + 8 + encryptedBody.length);
+                envelope.order(ByteOrder.LITTLE_ENDIAN);
+                envelope.put(FLAG_ENCRYPTED);
+                envelope.putLong(keyId);
+                envelope.put(encryptedBody);
+                payloadBytes = envelope.array();
+                Log.i(TAG, "Зашифрована команда по keyId=" + keyId);
+            }
+
+            MqttMessage message = new MqttMessage(payloadBytes);
             message.setQos(1); // Гарантированная доставка приказа
             message.setRetained(false);
 

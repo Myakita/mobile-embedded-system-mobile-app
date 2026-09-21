@@ -2,6 +2,7 @@ package com.example.mobile_embedded_system.security;
 
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
+import android.security.keystore.KeyProtection;
 import android.util.Log;
 
 import java.security.KeyStore;
@@ -40,6 +41,21 @@ public class KeyStoreManager {
             ks = null;
         }
         this.keyStore = ks;
+        initDefaultDemoProfiles();
+    }
+
+    public synchronized void initDefaultDemoProfiles() {
+        long[] demoKeyIds = {1L, 1001L, 1002L, 1003L};
+        for (long keyId : demoKeyIds) {
+            String alias = "demo_key_" + keyId;
+            try {
+                generateKeyInKeyStore(alias, CryptoAlgorithm.AES_128_GCM);
+                CryptoProfile profile = new CryptoProfile("profile_" + keyId, keyId, CryptoAlgorithm.AES_128_GCM, alias, 99881100L + keyId);
+                registerProfile(profile);
+            } catch (CryptoException e) {
+                Log.w(TAG, "Ошибка регистрации демо-ключа keyId=" + keyId + ": " + e.getMessage());
+            }
+        }
     }
 
     public synchronized void registerProfile(CryptoProfile profile) {
@@ -137,9 +153,15 @@ public class KeyStoreManager {
 
             if (keyStore != null) {
                 try {
-                    KeyStore.SecretKeyEntry entry = new KeyStore.SecretKeyEntry(secretKey);
-                    keyStore.setEntry(alias, entry, null);
-                } catch (Exception e) {
+                    KeyProtection.Builder builder = new KeyProtection.Builder(
+                            KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT
+                    );
+                    if (algorithm == CryptoAlgorithm.AES_128_GCM || algorithm == CryptoAlgorithm.AES_256_GCM) {
+                        builder.setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                               .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE);
+                    }
+                    keyStore.setEntry(alias, new KeyStore.SecretKeyEntry(secretKey), builder.build());
+                } catch (NoClassDefFoundError | Exception e) {
                     Log.w(TAG, "Ошибка записи в AndroidKeyStore: " + e.getMessage());
                 }
             }

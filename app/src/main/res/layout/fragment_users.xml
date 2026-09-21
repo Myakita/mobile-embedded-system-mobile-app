@@ -3,23 +3,136 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/appBg"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:orientation="vertical">
 
-    <TextView
-        style="@style/Text.Label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="РЕЕСТР ПОЛЬЗОВАТЕЛЕЙ И СОСТАВА ГРУППЫ"
-        android:textSize="14sp" />
+    <!-- Заголовок модуля (§6.5) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:background="?attr/appSurface"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
 
-    <TextView
+        <TextView
+            style="@style/Text.Label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="── СОСТАВ И ЛИЧНЫЙ РЕЕСТР ГРУППЫ ──"
+            android:textColor="?attr/appInk"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textUserCountSummary"
+            style="@style/Text.Value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3 ЧЕЛ."
+            android:textColor="?attr/appInk2"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/appHairline" />
+
+    <!-- Поле поиска -->
+    <EditText
+        android:id="@+id/editUserSearch"
         style="@style/Text.Value"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Модуль списков, поиска и состояния участников"
-        android:textColor="?attr/appInk2"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:background="?attr/appSurface"
+        android:hint="ПОИСК: ПОЗЫВНОЙ, ID ИЛИ S/N"
+        android:imeOptions="actionSearch"
+        android:inputType="text"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:textColor="?attr/appInk"
+        android:textColorHint="?attr/appInk2"
         android:textSize="12sp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/appHairline" />
+
+    <!-- Панель быстрой фильтрации по статусам -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:background="?attr/appBg"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
+
+        <TextView
+            android:id="@+id/btnFilterAll"
+            style="@style/Text.Label"
+            android:layout_width="0dp"
+            android:layout_height="28dp"
+            android:layout_weight="1"
+            android:background="?attr/appInk"
+            android:gravity="center"
+            android:text="ВСЕ"
+            android:textColor="?attr/appSurface"
+            android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/btnFilterOk"
+            style="@style/Text.Label"
+            android:layout_width="0dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:background="?attr/appSurface"
+            android:gravity="center"
+            android:text="○ OK"
+            android:textColor="?attr/appInk"
+            android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/btnFilterAlert"
+            style="@style/Text.Label"
+            android:layout_width="0dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:background="?attr/appSurface"
+            android:gravity="center"
+            android:text="■ ТРЕВОГА"
+            android:textColor="?attr/appInk"
+            android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/btnFilterOffline"
+            style="@style/Text.Label"
+            android:layout_width="0dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:background="?attr/appSurface"
+            android:gravity="center"
+            android:text="⌀ STALE"
+            android:textColor="?attr/appInk"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/appHairline" />
+
+    <!-- Список состава -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerUsers"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="12dp" />
+
 </LinearLayout>

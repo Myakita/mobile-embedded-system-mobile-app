@@ -20,6 +20,9 @@ public interface TelemetryDao {
     @Query("SELECT * FROM telemetry_records WHERE user_id = :userId AND timestamp >= :fromTimestamp ORDER BY timestamp ASC, sequence ASC")
     LiveData<List<TelemetryEntity>> getHistoryForUser(long userId, long fromTimestamp);
 
-    @Query("DELETE FROM telemetry_records WHERE timestamp < :cutoffTimestamp")
-    int deleteOlderThan(long cutoffTimestamp);
+    /**
+     * Удаление устаревших записей телеметрии по времени формирования (в секундах Unix Epoch).
+     */
+    @Query("DELETE FROM telemetry_records WHERE timestamp < :cutoffTimestampSec")
+    int deleteOlderThan(long cutoffTimestampSec);
 }

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="56dp"
+    android:background="?attr/appSurface"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:minHeight="55dp"
+        android:orientation="horizontal">
+
+        <!-- Цветной индикатор статуса слева (§6.8.2) -->
+        <View
+            android:id="@+id/viewUserStatusIndicator"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:background="?attr/appStatusOk" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
+
+            <TextView
+                android:id="@+id/textUserCallsign"
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="БОЕЦ [1001] • КОМАНДИР"
+                android:textColor="?attr/appInk"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/textUserSubInfo"
+                style="@style/Text.Value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="ID: 1001  |  S/N: 99881100"
+                android:textColor="?attr/appInk2"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Блок телеметрии: Пульс / Температура / Давление -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:orientation="vertical"
+            android:paddingEnd="12dp">
+
+            <TextView
+                android:id="@+id/textUserVitals"
+                style="@style/Text.Value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="72 BPM  •  36.6 °C"
+                android:textColor="?attr/appInk"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/textUserAgeAndPressure"
+                style="@style/Text.Value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="120/80  |  3 с назад"
+                android:textColor="?attr/appInk2"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Волосная линейка-разделитель 1dp -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/appHairline" />
+</LinearLayout>

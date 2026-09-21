@@ -856,15 +856,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         rangeRingPolylines.clear();
         if (mapView != null) {
             mapView.onDestroy();
+            mapView = null;
         }
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (mapView != null) {
-            mapView.onDestroy();
-        }
     }
 
     private void exportActiveUnitSession() {

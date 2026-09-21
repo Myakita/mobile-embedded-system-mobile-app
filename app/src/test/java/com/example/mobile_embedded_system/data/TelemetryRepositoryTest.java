@@ -60,8 +60,18 @@ public class TelemetryRepositoryTest {
         assertEquals(1001L, liveData.getValue().userId);
     }
 
+    @Test
+    public void testPruneOlderThanDelegatesToDaoWithSeconds() throws InterruptedException {
+        long cutoffSec = 1700000000L;
+        repository.pruneOlderThan(cutoffSec);
+        Thread.sleep(100);
+
+        assertEquals(cutoffSec, mockDao.lastDeletedThreshold);
+    }
+
     private static class MockTelemetryDao implements TelemetryDao {
         final List<TelemetryEntity> insertedEntities = new java.util.ArrayList<>();
+        long lastDeletedThreshold = -1L;
 
         @Override
         public long insert(TelemetryEntity entity) {
@@ -87,6 +97,7 @@ public class TelemetryRepositoryTest {
 
         @Override
         public int deleteOlderThan(long timestampThreshold) {
+            this.lastDeletedThreshold = timestampThreshold;
             return 0;
         }
     }

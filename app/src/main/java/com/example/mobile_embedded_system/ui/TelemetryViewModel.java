@@ -9,9 +9,15 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.example.mobile_embedded_system.data.MockTelemetryGenerator;
 import com.example.mobile_embedded_system.data.TelemetryRepository;
+import com.example.mobile_embedded_system.data.local.DeviceConfigEntity;
+import com.example.mobile_embedded_system.data.local.NetworkEntity;
 import com.example.mobile_embedded_system.data.local.TelemetryEntity;
+import com.example.mobile_embedded_system.data.model.ConfigSyncState;
+import com.example.mobile_embedded_system.data.model.DeviceConfigModel;
 import com.example.mobile_embedded_system.data.model.PacketDiagnosticsModel;
 import com.example.mobile_embedded_system.domain.TacticalWaypointManager;
+import com.example.mobile_embedded_system.domain.UnitHierarchyManager;
+import com.example.mobile_embedded_system.security.KeyStoreManager;
 import com.example.mobile_embedded_system.transport.MqttTransportManager;
 import com.example.mobile_embedded_system.domain.TacticalCommand;
 import com.example.mobile_embedded_system.domain.Waypoint;
@@ -31,11 +37,14 @@ public class TelemetryViewModel extends AndroidViewModel {
     }
 
     private final TelemetryRepository repository;
+    private final KeyStoreManager keyStoreManager;
     private final MockTelemetryGenerator mockGenerator;
     private final MqttTransportManager mqttTransport;
     private final TacticalWaypointManager waypointManager;
+    private final UnitHierarchyManager hierarchyManager;
 
     private final MutableLiveData<ConnectionState> connectionState = new MutableLiveData<>(ConnectionState.DISCONNECTED);
+    private final MutableLiveData<String> activeNetworkId = new MutableLiveData<>("mesh-a");
 
     // Сохранение состояния экрана при смене тем и конфигурации
     private double lastLat = Double.NaN;
@@ -50,15 +59,44 @@ public class TelemetryViewModel extends AndroidViewModel {
     public TelemetryViewModel(@NonNull Application application) {
         super(application);
         this.repository = new TelemetryRepository(application);
+        this.keyStoreManager = new KeyStoreManager();
         this.mockGenerator = new MockTelemetryGenerator(this);
-        this.mqttTransport = new MqttTransportManager(repository);
+        this.mqttTransport = new MqttTransportManager(repository, keyStoreManager);
         this.waypointManager = new TacticalWaypointManager();
+        this.hierarchyManager = new UnitHierarchyManager();
 
         startMockMode();
     }
 
+    public LiveData<String> getActiveNetworkId() {
+        return activeNetworkId;
+    }
+
+    public void setActiveNetworkId(String networkId) {
+        if (networkId != null && !networkId.equals(activeNetworkId.getValue())) {
+            activeNetworkId.setValue(networkId);
+            mqttTransport.setNetworkConfig(networkId, "7F10/21A0");
+        }
+    }
+
+    public LiveData<List<NetworkEntity>> getAllNetworks() {
+        return repository.getAllNetworks();
+    }
+
+    public void createNetwork(String id, String name, String mqttRoot) {
+        repository.createNetwork(new NetworkEntity(id, name, mqttRoot, System.currentTimeMillis()));
+    }
+
+    public KeyStoreManager getKeyStoreManager() {
+        return keyStoreManager;
+    }
+
     public TacticalWaypointManager getWaypointManager() {
         return waypointManager;
+    }
+
+    public UnitHierarchyManager getHierarchyManager() {
+        return hierarchyManager;
     }
 
     public void saveCameraState(double lat, double lon, double zoom, double bearing) {
@@ -157,8 +195,8 @@ public class TelemetryViewModel extends AndroidViewModel {
         mqttTransport.disconnect();
     }
     public void pruneOldTelemetry(long retentionMillis) {
-        long cutoff = System.currentTimeMillis() - retentionMillis;
-        repository.pruneOlderThan(cutoff);
+        long cutoffTimestampSec = (System.currentTimeMillis() - retentionMillis) / 1000L;
+        repository.pruneOlderThan(cutoffTimestampSec);
     }
 
     /**
@@ -178,5 +216,24 @@ public class TelemetryViewModel extends AndroidViewModel {
 
         // 3. Отправляем в эфир MQTT (если подключены)
         return mqttTransport.publishCommand(command, activeUserId);
+    }
+
+    public LiveData<DeviceConfigEntity> getDeviceConfig(long deviceSerial) {
+        return repository.getDeviceConfig(deviceSerial);
+    }
+
+    /**
+     * Сохранение конфигурации устройства.
+     * По ТЗ §18 и AC-03 статус выставляется PENDING («Ожидает применения»).
+     * Локальное сохранение не считается успешным применением на устройстве (APPLIED).
+     */
+    public boolean saveAndTransmitDeviceConfig(DeviceConfigModel config) {
+        if (config == null) return false;
+
+        config.setSyncState(ConfigSyncState.PENDING);
+        config.setLastSyncTimestampMs(System.currentTimeMillis());
+
+        repository.saveDeviceConfig(DeviceConfigEntity.fromModel(config));
+        return true;
     }
 }

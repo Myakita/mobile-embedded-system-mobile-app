@@ -71,8 +71,46 @@ public class DeviceConfigFragment extends Fragment {
         viewModel = new ViewModelProvider(requireActivity()).get(TelemetryViewModel.class);
 
         initViews(view);
+        observePersistedConfig();
         bindDataToViews();
         setupChangeListeners();
+    }
+
+    private void observePersistedConfig() {
+        viewModel.getDeviceConfig(currentConfig.getDeviceSerial()).observe(getViewLifecycleOwner(), entity -> {
+            if (entity != null) {
+                DeviceConfigModel loaded = entity.toModel();
+                copyConfig(loaded, currentConfig);
+                bindDataToViews();
+            }
+        });
+    }
+
+    private void copyConfig(DeviceConfigModel src, DeviceConfigModel dst) {
+        dst.setDeviceSerial(src.getDeviceSerial());
+        dst.setUserId(src.getUserId());
+        dst.setDefaultDestinationId(src.getDefaultDestinationId());
+        dst.setTempEnabled(src.isTempEnabled());
+        dst.setPulseEnabled(src.isPulseEnabled());
+        dst.setPressureEnabled(src.isPressureEnabled());
+        dst.setGnssEnabled(src.isGnssEnabled());
+        dst.setImuEnabled(src.isImuEnabled());
+        dst.setTelemetryPeriodSec(src.getTelemetryPeriodSec());
+        dst.setLoraEnabled(src.isLoraEnabled());
+        dst.setLoraFrequencyMhz(src.getLoraFrequencyMhz());
+        dst.setLoraSpreadingFactor(src.getLoraSpreadingFactor());
+        dst.setLoraBandwidthKhz(src.getLoraBandwidthKhz());
+        dst.setLoraTxPowerDbm(src.getLoraTxPowerDbm());
+        dst.setWifiEnabled(src.isWifiEnabled());
+        dst.setWifiSsid(src.getWifiSsid());
+        dst.setWifiPassword(src.getWifiPassword());
+        dst.setLteEnabled(src.isLteEnabled());
+        dst.setLteApn(src.getLteApn());
+        dst.setBrokerUrl(src.getBrokerUrl());
+        dst.setNetworkRoot(src.getNetworkRoot());
+        dst.setHierarchyPath(src.getHierarchyPath());
+        dst.setSyncState(src.getSyncState());
+        dst.setLastSyncTimestampMs(src.getLastSyncTimestampMs());
     }
 
     private void initViews(View view) {
@@ -226,13 +264,12 @@ public class DeviceConfigFragment extends Fragment {
             currentConfig.setNetworkRoot(editNetworkRoot.getText().toString().trim());
             currentConfig.setHierarchyPath(editHierarchyPath.getText().toString().trim());
 
-            currentConfig.setSyncState(ConfigSyncState.APPLIED);
-            currentConfig.setLastSyncTimestampMs(System.currentTimeMillis());
+            viewModel.saveAndTransmitDeviceConfig(currentConfig);
 
-            updateSyncStatusUI(ConfigSyncState.APPLIED);
-
+            currentConfig.setSyncState(ConfigSyncState.PENDING);
+            updateSyncStatusUI(ConfigSyncState.PENDING);
             Toast.makeText(requireContext(),
-                    "КОНФИГУРАЦИЯ ПЕРЕДАНА НА ТЕРМИНАЛ [" + currentConfig.getDeviceSerial() + "]",
+                    "КОНФИГУРАЦИЯ СОХРАНЕНА В БД (ОЖИДАЕТ ПОДТВЕРЖДЕНИЯ ОТ ТЕРМИНАЛА [" + currentConfig.getDeviceSerial() + "])",
                     Toast.LENGTH_LONG).show();
 
         } catch (Exception e) {

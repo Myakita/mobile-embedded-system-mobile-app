@@ -15,6 +15,9 @@ import com.example.mobile_embedded_system.data.model.LMashPayload;
 )
 public class TelemetryEntity {
 
+    @ColumnInfo(name = "network_id")
+    public String networkId = "mesh-a";
+
     @ColumnInfo(name = "device_serial")
     public long deviceSerial;
 

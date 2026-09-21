@@ -14,7 +14,7 @@ public class MqttTopicBuilderTest {
                 0x7A831204L,
                 0x19AA0221L
         );
-        assertEquals("mesh-a/7F10/21A0/0304/telemetry/to/7A831204/from/19AA0221", topic);
+        assertEquals("mesh-a/7F10/21A0/0304/telemetry/to/000000007A831204/from/0000000019AA0221", topic);
     }
 
     @Test
@@ -25,7 +25,7 @@ public class MqttTopicBuilderTest {
                 0x19AA0221L,
                 0x7A831204L
         );
-        assertEquals("mesh-a/7F10/21A0/0304/command/to/19AA0221/from/7A831204", topic);
+        assertEquals("mesh-a/7F10/21A0/0304/command/to/0000000019AA0221/from/000000007A831204", topic);
     }
 
     @Test
@@ -36,7 +36,7 @@ public class MqttTopicBuilderTest {
                 MqttTopicBuilder.TYPE_COMMAND,
                 0x19AA0221L
         );
-        assertEquals("mesh-a/7F10/21A0/0304/command/to/19AA0221/#", topic);
+        assertEquals("mesh-a/7F10/21A0/0304/command/to/0000000019AA0221/#", topic);
     }
 
     @Test
@@ -46,5 +46,12 @@ public class MqttTopicBuilderTest {
                 "7F10/21A0"
         );
         assertEquals("mesh-a/7F10/21A0/#", topic);
+    }
+
+    @Test
+    public void testFull64BitIdFormat() {
+        long large64BitId = 0x123456789ABCDEF0L;
+        String formatted = MqttTopicBuilder.formatHexId(large64BitId);
+        assertEquals("123456789ABCDEF0", formatted);
     }
 }

@@ -1,5 +1,6 @@
 package com.example.mobile_embedded_system.domain.network;
 
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -72,7 +73,7 @@ public final class MqttTopicBuilder {
     }
 
     public static String formatHexId(long id) {
-        return String.format("%08X", id & 0xFFFFFFFFL);
+        return String.format(Locale.US, "%016X", id);
     }
 
     private static String sanitize(String part) {

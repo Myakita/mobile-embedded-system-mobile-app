@@ -6,12 +6,28 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-@Database(entities = {TelemetryEntity.class}, version = 1, exportSchema = false)
+@Database(
+        entities = {
+                TelemetryEntity.class,
+                DeviceConfigEntity.class,
+                NetworkEntity.class,
+                SubjectEntity.class,
+                DeviceEntity.class,
+                CommandEntity.class
+        },
+        version = 3,
+        exportSchema = false
+)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static volatile AppDatabase INSTANCE;
 
     public abstract TelemetryDao telemetryDao();
+    public abstract DeviceConfigDao deviceConfigDao();
+    public abstract NetworkDao networkDao();
+    public abstract SubjectDao subjectDao();
+    public abstract DeviceDao deviceDao();
+    public abstract CommandDao commandDao();
 
     public static AppDatabase getInstance(Context context) {
         if (INSTANCE == null) {
@@ -21,7 +37,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             context.getApplicationContext(),
                             AppDatabase.class,
                             "unit_monitor_db"
-                    ).build();
+                    ).fallbackToDestructiveMigration().build();
                 }
             }
         }
