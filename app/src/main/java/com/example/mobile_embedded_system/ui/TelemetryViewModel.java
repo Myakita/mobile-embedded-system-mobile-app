@@ -63,9 +63,17 @@ public class TelemetryViewModel extends AndroidViewModel {
         this.mockGenerator = new MockTelemetryGenerator(this);
         this.mqttTransport = new MqttTransportManager(repository, keyStoreManager);
         this.waypointManager = new TacticalWaypointManager();
-        this.hierarchyManager = new UnitHierarchyManager();
+        this.hierarchyManager = new UnitHierarchyManager(repository.getSubjectDao(), repository.getExecutorService());
 
         startMockMode();
+    }
+
+    public List<Long> getSquadUserIds() {
+        return hierarchyManager.getAllUnitUserIds();
+    }
+
+    public java.util.concurrent.ExecutorService getRepositoryExecutor() {
+        return repository.getExecutorService();
     }
 
     public LiveData<String> getActiveNetworkId() {
@@ -215,6 +223,14 @@ public class TelemetryViewModel extends AndroidViewModel {
         );
 
         // 3. Отправляем в эфир MQTT (если подключены)
+        return mqttTransport.publishCommand(command, activeUserId);
+    }
+
+    /**
+     * Передача команды запроса квитанции связи (CHECK_IN) подчиненному юниту (AC-05).
+     */
+    public boolean dispatchCheckInCommand(long targetUserId) {
+        TacticalCommand command = TacticalCommand.createCheckIn(targetUserId);
         return mqttTransport.publishCommand(command, activeUserId);
     }
 

@@ -32,4 +32,24 @@ public class TacticalCommandTest {
         assertNotNull(bytes);
         assertEquals(LMashPayload.PAYLOAD_SIZE, bytes.length);
     }
+
+    @Test
+    public void testCheckInCommandPayloadSerialization() {
+        TacticalCommand checkIn = TacticalCommand.createCheckIn(1003L);
+
+        assertEquals("CHECK_IN", checkIn.getCommand());
+        assertEquals(1003L, checkIn.getTargetUserId());
+        assertEquals(LMashPayload.CMD_CHECK_IN, checkIn.getCommandType());
+
+        LMashPayload payload = checkIn.toLMashPayload(25L, 1001L);
+        assertNotNull(payload);
+        assertEquals(LMashPayload.MSG_COMMAND, payload.getMessageType());
+        assertEquals(LMashPayload.CMD_CHECK_IN, payload.getCommandType());
+        assertEquals(25L, payload.getSequence());
+        assertEquals(1001L, payload.getUserId());
+        assertEquals(1003L, payload.getDestinationId());
+
+        byte[] bytes = checkIn.toBytes(25L, 1001L);
+        assertEquals(LMashPayload.PAYLOAD_SIZE, bytes.length);
+    }
 }

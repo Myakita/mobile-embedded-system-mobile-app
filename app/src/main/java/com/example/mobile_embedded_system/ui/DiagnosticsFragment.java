@@ -116,13 +116,21 @@ public class DiagnosticsFragment extends Fragment {
     }
 
     private void updateUnitButtonsUI() {
-        int inkColor = requireContext().getColor(R.color.ink);
-        int surfaceColor = requireContext().getColor(R.color.surface);
-        int bgColor = requireContext().getColor(R.color.bg);
+        int inkColor = resolveThemeColor(R.attr.appInk);
+        int surfaceColor = resolveThemeColor(R.attr.appSurface);
+        int bgColor = resolveThemeColor(R.attr.appBg);
 
         applyButtonStyle(btnDiag1001, selectedUnitId == 1001L, inkColor, surfaceColor, bgColor, inkColor);
         applyButtonStyle(btnDiag1002, selectedUnitId == 1002L, inkColor, surfaceColor, bgColor, inkColor);
         applyButtonStyle(btnDiag1003, selectedUnitId == 1003L, inkColor, surfaceColor, bgColor, inkColor);
+    }
+
+    private int resolveThemeColor(int attrResId) {
+        android.util.TypedValue typedValue = new android.util.TypedValue();
+        if (requireContext().getTheme().resolveAttribute(attrResId, typedValue, true)) {
+            return typedValue.data;
+        }
+        return 0xFF000000;
     }
 
     private void applyButtonStyle(TextView btn, boolean isActive, int activeBg, int activeText, int inactiveBg, int inactiveText) {

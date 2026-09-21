@@ -30,8 +30,6 @@ import java.util.Map;
  */
 public class HierarchyFragment extends Fragment {
 
-    private static final long[] SQUAD_IDS = {1001L, 1002L, 1003L};
-
     private TelemetryViewModel viewModel;
     private UnitHierarchyManager hierarchyManager;
     private HierarchyAdapter adapter;
@@ -87,7 +85,7 @@ public class HierarchyFragment extends Fragment {
     }
 
     private void observeSquadTelemetry() {
-        for (long userId : SQUAD_IDS) {
+        for (long userId : viewModel.getSquadUserIds()) {
             viewModel.getLatestTelemetry(userId).observe(getViewLifecycleOwner(), entity -> {
                 if (entity != null) {
                     squadData.put(entity.userId, entity);

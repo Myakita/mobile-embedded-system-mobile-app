@@ -14,6 +14,18 @@ public interface SubjectDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(SubjectEntity subject);
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertAll(List<SubjectEntity> subjects);
+
+    @Query("SELECT * FROM subjects")
+    List<SubjectEntity> getAllSubjectsSync();
+
+    @Query("DELETE FROM subjects WHERE id = :id")
+    void deleteById(String id);
+
+    @Query("DELETE FROM subjects")
+    void deleteAll();
+
     @Query("SELECT * FROM subjects WHERE network_id = :networkId")
     LiveData<List<SubjectEntity>> getSubjectsForNetwork(String networkId);
 }

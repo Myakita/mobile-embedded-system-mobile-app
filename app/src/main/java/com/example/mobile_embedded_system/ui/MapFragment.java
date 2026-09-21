@@ -35,7 +35,10 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
+import android.os.Handler;
+import android.os.Looper;
 import com.example.mobile_embedded_system.domain.DeviceStatusEvaluator;
+import com.example.mobile_embedded_system.domain.PositionStatusEvaluator;
 
 import com.example.mobile_embedded_system.data.local.TelemetryEntity;
 import com.example.mobile_embedded_system.domain.SquadAlertManager;
@@ -85,7 +88,6 @@ import java.util.Map;
  */
 public class MapFragment extends Fragment implements OnMapReadyCallback {
 
-    private static final long[] SQUAD_IDS = {1001L, 1002L, 1003L};
     private static final String PREFS_NAME = "unit_monitor_prefs";
     private static final String KEY_THEME = "selected_theme";
 
@@ -138,6 +140,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         @Override
         public void onReceive(Context context, Intent intent) {
             updateBatteryStatus(intent);
+        }
+    };
+
+    private final Handler stalenessHandler = new Handler(Looper.getMainLooper());
+    private final Runnable stalenessRunnable = new Runnable() {
+        @Override
+        public void run() {
+            checkPositionStaleness();
+            stalenessHandler.postDelayed(this, 1000L);
         }
     };
 
@@ -553,7 +564,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void observeSquadTelemetry() {
-        for (long userId : SQUAD_IDS) {
+        for (long userId : viewModel.getSquadUserIds()) {
             viewModel.getLatestTelemetry(userId).observe(getViewLifecycleOwner(), entity -> {
                 if (entity == null || maplibreMap == null) {
                     return;
@@ -664,16 +675,21 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
     private void updateUnitMarker(TelemetryEntity entity) {
         LatLng position = new LatLng(entity.latitude, entity.longitude);
-        int statusColor = resolveUnitStatusColor(entity);
+
+        long nowSec = System.currentTimeMillis() / 1000L;
+        PositionStatusEvaluator.PositionState posState = PositionStatusEvaluator.evaluate(entity, nowSec);
+        boolean isStale = (posState == PositionStatusEvaluator.PositionState.STALE || posState == PositionStatusEvaluator.PositionState.UNKNOWN);
+        int statusColor = isStale ? resolveThemeColor(R.attr.appInk2) : resolveUnitStatusColor(entity);
 
         boolean isActive = (entity.userId == activeUserId);
-        boolean isCritical = (resolveUnitStatus(entity) == TacticalStatusEvaluator.Status.CRITICAL);
+        boolean isCritical = (!isStale && resolveUnitStatus(entity) == TacticalStatusEvaluator.Status.CRITICAL);
 
-        Bitmap markerBitmap = createTacticalMarkerBitmap((float) entity.headingDegrees, statusColor, isActive, isCritical);
+        Bitmap markerBitmap = createTacticalMarkerBitmap((float) entity.headingDegrees, statusColor, isActive, isCritical, isStale);
         Icon icon = IconFactory.getInstance(requireContext()).fromBitmap(markerBitmap);
 
         String callsign = getCallsignByUserId(entity.userId);
-        String snippet = "ЧСС: " + entity.pulseBpm + " BPM | " + String.format(Locale.US, "%.1f", entity.temperatureCelsius) + " °C";
+        String snippet = "ЧСС: " + entity.pulseBpm + " BPM | " + String.format(Locale.US, "%.1f", entity.temperatureCelsius) + " °C"
+                + (isStale ? " [" + posState.getLabel() + "]" : "");
 
         Marker marker = tacticalMarkers.get(entity.userId);
         if (marker == null) {
@@ -717,7 +733,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         textPulse.setText(String.format(Locale.US, "%d BPM", entity.pulseBpm));
         textTemperature.setText(String.format(Locale.US, "%.1f °C", entity.temperatureCelsius));
         textPressure.setText(String.format(Locale.US, "%d/%d", entity.pressureSys, entity.pressureDia));
-        updateGnssStatus(entity.positionQuality);
+        updateGnssStatus(entity);
 
         int statusColor = resolveUnitStatusColor(entity);
         viewStatusIndicator.setBackgroundColor(statusColor);
@@ -752,14 +768,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         return "БОЕЦ [" + userId + "]";
     }
 
-    private Bitmap createTacticalMarkerBitmap(float headingDegrees, int arrowColor, boolean isActive, boolean isCritical) {
+    private Bitmap createTacticalMarkerBitmap(float headingDegrees, int arrowColor, boolean isActive, boolean isCritical, boolean isStale) {
         int sizePx = 64;
         Bitmap bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
 
         int surfaceBg = resolveThemeColor(R.attr.appSurface);
         int strokeColor;
-        if (isCritical) {
+        if (isStale) {
+            strokeColor = resolveThemeColor(R.attr.appHairline);
+        } else if (isCritical) {
             strokeColor = resolveThemeColor(R.attr.appStatusCritical);
         } else if (isActive) {
             strokeColor = resolveThemeColor(R.attr.appInk);
@@ -784,6 +802,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         Paint arrowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         arrowPaint.setStyle(Paint.Style.FILL);
         arrowPaint.setColor(arrowColor);
+        if (isStale) {
+            arrowPaint.setAlpha(90);
+        }
 
         Path arrowPath = new Path();
         arrowPath.moveTo(sizePx / 2.0f, 12f);
@@ -810,19 +831,24 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     public void onStart() {
         super.onStart();
         mapView.onStart();
-        requireContext().registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        Intent stickyBattery = requireContext().registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        if (stickyBattery != null) {
+            updateBatteryStatus(stickyBattery);
+        }
     }
 
     @Override
     public void onResume() {
         super.onResume();
         mapView.onResume();
+        stalenessHandler.post(stalenessRunnable);
     }
 
     @Override
     public void onPause() {
         super.onPause();
         mapView.onPause();
+        stalenessHandler.removeCallbacks(stalenessRunnable);
     }
 
     @Override
@@ -889,8 +915,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                     return;
                 }
 
-                // 3. Выполняем файловые операции в фоновом потоке
-                new Thread(() -> {
+                // 3. Выполняем файловые операции в пуле потоков репозитория
+                viewModel.getRepositoryExecutor().execute(() -> {
                     try {
                         String callsign = getCallsignByUserId(activeUserId);
                         String gpxContent = GpxTrackSerializer.serialize(callsign, history);
@@ -922,27 +948,36 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                             Toast.makeText(requireContext(), "ОШИБКА ЭКСПОРТА: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         });
                     }
-                }).start();
+                });
             }
         });
-    }private void updateGnssStatus(int positionQuality) {
-        if (textGpsStatus == null) return;
+    }
 
-        DeviceStatusEvaluator.GnssState state = DeviceStatusEvaluator.evaluateGnss(positionQuality);
-        switch (state) {
-            case FIX_3D:
-                textGpsStatus.setText("ГНСС: 3D FIX");
-                textGpsStatus.setTextColor(resolveThemeColor(R.attr.appStatusOk));
-                break;
-            case FIX_2D:
-                textGpsStatus.setText("ГНСС: 2D FIX");
-                textGpsStatus.setTextColor(resolveThemeColor(R.attr.appStatusWarning));
-                break;
-            case NO_FIX:
-            default:
-                textGpsStatus.setText("ГНСС: НЕТ СВЯЗИ");
-                textGpsStatus.setTextColor(resolveThemeColor(R.attr.appStatusCritical));
-                break;
+    private void updateGnssStatus(TelemetryEntity entity) {
+        if (textGpsStatus == null) return;
+        if (entity == null) {
+            textGpsStatus.setText("ГНСС: НЕТ СВЯЗИ");
+            textGpsStatus.setTextColor(resolveThemeColor(R.attr.appStatusCritical));
+            return;
+        }
+
+        long nowSec = System.currentTimeMillis() / 1000L;
+        PositionStatusEvaluator.PositionState posState = PositionStatusEvaluator.evaluate(entity, nowSec);
+        long ageSec = PositionStatusEvaluator.calculateAgeSeconds(entity, nowSec);
+        DeviceStatusEvaluator.GnssState state = DeviceStatusEvaluator.evaluateGnss(entity.positionQuality);
+
+        if (posState == PositionStatusEvaluator.PositionState.STALE) {
+            textGpsStatus.setText(String.format(Locale.US, "ГНСС: УСТАРЕЛО (%dс)", ageSec));
+            textGpsStatus.setTextColor(resolveThemeColor(R.attr.appStatusWarning));
+        } else if (posState == PositionStatusEvaluator.PositionState.UNKNOWN || state == DeviceStatusEvaluator.GnssState.NO_FIX) {
+            textGpsStatus.setText("ГНСС: НЕТ СВЯЗИ");
+            textGpsStatus.setTextColor(resolveThemeColor(R.attr.appStatusCritical));
+        } else if (state == DeviceStatusEvaluator.GnssState.FIX_3D) {
+            textGpsStatus.setText("ГНСС: 3D FIX");
+            textGpsStatus.setTextColor(resolveThemeColor(R.attr.appStatusOk));
+        } else {
+            textGpsStatus.setText("ГНСС: 2D FIX");
+            textGpsStatus.setTextColor(resolveThemeColor(R.attr.appStatusWarning));
         }
     }
 
@@ -959,7 +994,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         int pct = (scale > 0) ? Math.round((level / (float) scale) * 100) : level;
         DeviceStatusEvaluator.BatteryState state = DeviceStatusEvaluator.evaluateBattery(pct);
 
-        String text = "АКБ: " + pct + "%" + (isCharging ? " ⚡" : "");
+        String text = "АКБ ТЕРМИНАЛА: " + pct + "%" + (isCharging ? " [СЕТЬ]" : "");
         textBatteryStatus.setText(text);
 
         if (isCharging) {
@@ -980,4 +1015,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
+    private void checkPositionStaleness() {
+        for (TelemetryEntity entity : squadLatestData.values()) {
+            updateUnitMarker(entity);
+        }
+        TelemetryEntity active = squadLatestData.get(activeUserId);
+        if (active != null) {
+            updateGnssStatus(active);
+        }
+    }
 }

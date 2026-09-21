@@ -135,11 +135,36 @@ public class DeviceConfigModel {
                 deviceSerial, userId, defaultDestinationId,
                 tempEnabled, pulseEnabled, pressureEnabled, gnssEnabled, imuEnabled, telemetryPeriodSec,
                 loraEnabled, loraFrequencyMhz, loraSpreadingFactor, loraBandwidthKhz, loraTxPowerDbm,
-                wifiEnabled, wifiSsid != null ? wifiSsid : "",
-                lteEnabled, lteApn != null ? lteApn : "",
-                brokerUrl != null ? brokerUrl : "",
-                networkRoot != null ? networkRoot : "",
-                hierarchyPath != null ? hierarchyPath : ""
+                wifiEnabled, escapeJson(wifiSsid),
+                lteEnabled, escapeJson(lteApn),
+                escapeJson(brokerUrl),
+                escapeJson(networkRoot),
+                escapeJson(hierarchyPath)
         );
+    }
+
+    private static String escapeJson(String s) {
+        if (s == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '"': sb.append("\\\""); break;
+                case '\\': sb.append("\\\\"); break;
+                case '\b': sb.append("\\b"); break;
+                case '\f': sb.append("\\f"); break;
+                case '\n': sb.append("\\n"); break;
+                case '\r': sb.append("\\r"); break;
+                case '\t': sb.append("\\t"); break;
+                default:
+                    if (c < ' ') {
+                        sb.append(String.format(Locale.US, "\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+                    break;
+            }
+        }
+        return sb.toString();
     }
 }

@@ -8,8 +8,12 @@ import com.example.mobile_embedded_system.data.model.LMashPayload;
 public class TacticalCommand {
 
     public static final String CMD_ASSIGN_TARGET = "ASSIGN_TARGET";
+    public static final String CMD_CHECK_IN = "CHECK_IN";
+    public static final String CMD_HOLD = "HOLD";
+    public static final String CMD_RETURN = "RETURN";
 
     private final String command;
+    private final int commandType;
     private final long targetUserId;
     private final String waypointCallsign;
     private final double latitude;
@@ -17,16 +21,29 @@ public class TacticalCommand {
     private final long timestampMs;
 
     public TacticalCommand(long targetUserId, String waypointCallsign, double latitude, double longitude) {
-        this.command = CMD_ASSIGN_TARGET;
+        this(targetUserId, LMashPayload.CMD_HOLD, CMD_ASSIGN_TARGET, waypointCallsign, latitude, longitude);
+    }
+
+    public TacticalCommand(long targetUserId, int commandType, String command, String waypointCallsign, double latitude, double longitude) {
         this.targetUserId = targetUserId;
+        this.commandType = commandType;
+        this.command = command;
         this.waypointCallsign = waypointCallsign;
         this.latitude = latitude;
         this.longitude = longitude;
         this.timestampMs = System.currentTimeMillis();
     }
 
+    public static TacticalCommand createCheckIn(long targetUserId) {
+        return new TacticalCommand(targetUserId, LMashPayload.CMD_CHECK_IN, CMD_CHECK_IN, "CHECK_IN", 0.0, 0.0);
+    }
+
     public String getCommand() {
         return command;
+    }
+
+    public int getCommandType() {
+        return commandType;
     }
 
     public long getTargetUserId() {
@@ -62,7 +79,7 @@ public class TacticalCommand {
                         deviceSerial,
                         sourceId,
                         targetUserId,
-                        LMashPayload.CMD_HOLD
+                        commandType
                 );
         payload.setLatitudeE7((int) (latitude * 1e7));
         payload.setLongitudeE7((int) (longitude * 1e7));

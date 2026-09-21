@@ -2,8 +2,8 @@ package com.example.mobile_embedded_system.domain;
 
 import com.example.mobile_embedded_system.data.local.TelemetryEntity;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Доменный менеджер эскалации аварийных ситуаций группы (ТЗ §4.2, §6.7, §6.8).
@@ -28,7 +28,7 @@ public class SquadAlertManager {
         }
     }
 
-    private final Map<Long, TacticalStatusEvaluator.Status> previousStatuses = new HashMap<>();
+    private final Map<Long, TacticalStatusEvaluator.Status> previousStatuses = new ConcurrentHashMap<>();
 
     /**
      * Обработка телеметрии бойца.

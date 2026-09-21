@@ -34,8 +34,6 @@ import java.util.Map;
  */
 public class UsersFragment extends Fragment {
 
-    private static final long[] SQUAD_IDS = {1001L, 1002L, 1003L};
-
     private enum FilterMode { ALL, OK, ALERT, STALE }
 
     private TelemetryViewModel viewModel;
@@ -96,15 +94,39 @@ public class UsersFragment extends Fragment {
         RecyclerView recyclerView = view.findViewById(R.id.recyclerUsers);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        adapter = new UsersAdapter(userItem -> {
-            viewModel.setActiveUserId(userItem.userId);
-            Toast.makeText(requireContext(), "ВЫБРАН БОЕЦ: " + userItem.callsign, Toast.LENGTH_SHORT).show();
-            try {
-                NavHostFragment.findNavController(this).navigate(R.id.mapFragment);
-            } catch (Exception ignored) {}
+        adapter = new UsersAdapter(new UsersAdapter.OnUserClickListener() {
+            @Override
+            public void onUserClick(UsersAdapter.UserItem userItem) {
+                viewModel.setActiveUserId(userItem.userId);
+                Toast.makeText(requireContext(), "ВЫБРАН БОЕЦ: " + userItem.callsign, Toast.LENGTH_SHORT).show();
+                try {
+                    NavHostFragment.findNavController(UsersFragment.this).navigate(R.id.mapFragment);
+                } catch (Exception ignored) {}
+            }
+
+            @Override
+            public void onUserLongClick(UsersAdapter.UserItem userItem) {
+                showCheckInConfirmationDialog(userItem);
+            }
         });
 
         recyclerView.setAdapter(adapter);
+    }
+
+    private void showCheckInConfirmationDialog(UsersAdapter.UserItem userItem) {
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("КОМАНДА СВЯЗИ (CHECK-IN)")
+                .setMessage("Отправить команду CHECK_IN (запрос квитанции) бойцу " + userItem.callsign + "?")
+                .setPositiveButton("ОТПРАВИТЬ", (dialog, which) -> {
+                    boolean sent = viewModel.dispatchCheckInCommand(userItem.userId);
+                    if (sent) {
+                        Toast.makeText(requireContext(), "КОМАНДА CHECK_IN ПЕРЕДАНА В ЭФИР -> " + userItem.callsign, Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(requireContext(), "ОШИБКА: НЕТ СВЯЗИ С БРОКЕРОМ (MQTT ОТКЛЮЧЕН)", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("ОТМЕНА", null)
+                .show();
     }
 
     private void setupFilters() {
@@ -143,7 +165,8 @@ public class UsersFragment extends Fragment {
     }
 
     private void observeSquadTelemetry() {
-        for (long userId : SQUAD_IDS) {
+        List<Long> squadIds = viewModel.getSquadUserIds();
+        for (long userId : squadIds) {
             viewModel.getLatestTelemetry(userId).observe(getViewLifecycleOwner(), entity -> {
                 if (entity != null) {
                     squadData.put(entity.userId, entity);
@@ -157,8 +180,9 @@ public class UsersFragment extends Fragment {
     private void applyFilterAndSearch() {
         List<UsersAdapter.UserItem> filteredList = new ArrayList<>();
         long nowMs = System.currentTimeMillis();
+        List<Long> squadIds = viewModel.getSquadUserIds();
 
-        for (long userId : SQUAD_IDS) {
+        for (long userId : squadIds) {
             String callsign = getCallsignByUserId(userId);
             long serial = getSerialByUserId(userId);
             TelemetryEntity telemetry = squadData.get(userId);
@@ -176,8 +200,10 @@ public class UsersFragment extends Fragment {
             // 2. Фильтр по статусу
             boolean matchesFilter = true;
             if (telemetry != null) {
-                long ageSec = (nowMs - telemetry.receivedAtMs) / 1000L;
-                boolean isStale = ageSec > 120L;
+                long nowSec = nowMs / 1000L;
+                com.example.mobile_embedded_system.domain.PositionStatusEvaluator.PositionState posState =
+                        com.example.mobile_embedded_system.domain.PositionStatusEvaluator.evaluate(telemetry, nowSec);
+                boolean isStale = (posState == com.example.mobile_embedded_system.domain.PositionStatusEvaluator.PositionState.STALE);
                 TacticalStatusEvaluator.Status status = TacticalStatusEvaluator.evaluate(telemetry.pulseBpm, telemetry.temperatureCelsius);
 
                 if (currentFilter == FilterMode.OK) {
@@ -197,7 +223,7 @@ public class UsersFragment extends Fragment {
         }
 
         adapter.setItems(filteredList);
-        textUserCountSummary.setText(String.format(Locale.US, "%d ИЗ %d ЧЕЛ.", filteredList.size(), SQUAD_IDS.length));
+        textUserCountSummary.setText(String.format(Locale.US, "%d ИЗ %d ЧЕЛ.", filteredList.size(), squadIds.size()));
     }
 
     private String getCallsignByUserId(long userId) {

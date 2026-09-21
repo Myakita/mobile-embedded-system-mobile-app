@@ -36,6 +36,7 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.UserViewHold
 
     public interface OnUserClickListener {
         void onUserClick(UserItem userItem);
+        default void onUserLongClick(UserItem userItem) {}
     }
 
     private final List<UserItem> items = new ArrayList<>();
@@ -95,15 +96,23 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.UserViewHold
             long nowMs = System.currentTimeMillis();
 
             if (item.telemetry != null) {
-                long ageSec = (nowMs - item.telemetry.receivedAtMs) / 1000L;
-                boolean isStale = ageSec > 120L;
+                long nowSec = nowMs / 1000L;
+                com.example.mobile_embedded_system.domain.PositionStatusEvaluator.PositionState posState =
+                        com.example.mobile_embedded_system.domain.PositionStatusEvaluator.evaluate(item.telemetry, nowSec);
+                long ageSec = com.example.mobile_embedded_system.domain.PositionStatusEvaluator.calculateAgeSeconds(item.telemetry, nowSec);
 
                 textUserVitals.setText(String.format(Locale.US, "%d BPM  •  %.1f °C",
                         item.telemetry.pulseBpm, item.telemetry.temperatureCelsius));
 
                 String pressureStr = item.telemetry.pressureSys + "/" + item.telemetry.pressureDia;
-                String ageText = isStale ? String.format(Locale.US, "%s  |  %d с (STALE)", pressureStr, ageSec)
-                        : String.format(Locale.US, "%s  |  %d с назад", pressureStr, ageSec);
+                String ageText;
+                if (posState == com.example.mobile_embedded_system.domain.PositionStatusEvaluator.PositionState.STALE) {
+                    ageText = String.format(Locale.US, "%s  |  (%d с) STALE", pressureStr, ageSec);
+                } else if (posState == com.example.mobile_embedded_system.domain.PositionStatusEvaluator.PositionState.UNKNOWN) {
+                    ageText = String.format(Locale.US, "%s  |  UNKNOWN", pressureStr);
+                } else {
+                    ageText = String.format(Locale.US, "%s  |  %d с назад", pressureStr, ageSec);
+                }
                 textUserAgeAndPressure.setText(ageText);
 
                 TacticalStatusEvaluator.Status status = TacticalStatusEvaluator.evaluate(
@@ -111,7 +120,8 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.UserViewHold
                 );
 
                 int statusColorAttr;
-                if (isStale) {
+                if (posState == com.example.mobile_embedded_system.domain.PositionStatusEvaluator.PositionState.STALE
+                        || posState == com.example.mobile_embedded_system.domain.PositionStatusEvaluator.PositionState.UNKNOWN) {
                     statusColorAttr = R.attr.appInk2;
                 } else if (status == TacticalStatusEvaluator.Status.CRITICAL) {
                     statusColorAttr = R.attr.appStatusCritical;
@@ -124,12 +134,19 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.UserViewHold
                 viewUserStatusIndicator.setBackgroundColor(resolveColor(context, statusColorAttr));
             } else {
                 textUserVitals.setText("НЕТ ДАННЫХ");
-                textUserAgeAndPressure.setText("-- / --  |  ОФЛАЙН");
+                textUserAgeAndPressure.setText("-- / --  |  UNKNOWN");
                 viewUserStatusIndicator.setBackgroundColor(resolveColor(context, R.attr.appInk2));
             }
 
             itemView.setOnClickListener(v -> {
                 if (listener != null) listener.onUserClick(item);
+            });
+            itemView.setOnLongClickListener(v -> {
+                if (listener != null) {
+                    listener.onUserLongClick(item);
+                    return true;
+                }
+                return false;
             });
         }
 

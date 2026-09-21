@@ -1,14 +1,19 @@
 package com.example.mobile_embedded_system.domain;
 
+import com.example.mobile_embedded_system.data.local.SubjectDao;
+import com.example.mobile_embedded_system.data.local.SubjectEntity;
 import com.example.mobile_embedded_system.data.local.TelemetryEntity;
 import com.example.mobile_embedded_system.domain.network.MqttTopicBuilder;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 /**
  * Менеджер дерева иерархии подразделений и перерасчёта MQTT ACL (ТЗ §1.8–1.12, §5.8–5.12).
+ * Поддерживает сохранение и восстановление иерархии в локальной Room БД (US-14, AC-03.4).
  */
 public class UnitHierarchyManager {
 
@@ -24,11 +29,22 @@ public class UnitHierarchyManager {
         }
     }
 
+    private final SubjectDao subjectDao;
+    private final Executor executor;
     private final List<HierarchyNode> rootNodes = new ArrayList<>();
     private long nextNodeId = 100L;
 
     public UnitHierarchyManager() {
+        this(null, null);
+    }
+
+    public UnitHierarchyManager(SubjectDao subjectDao, Executor executor) {
+        this.subjectDao = subjectDao;
+        this.executor = executor;
         initDefaultHierarchy();
+        if (subjectDao != null && executor != null) {
+            loadOrPersistFromDb();
+        }
     }
 
     private void initDefaultHierarchy() {
@@ -52,8 +68,107 @@ public class UnitHierarchyManager {
         rootNodes.add(battalion);
     }
 
+    private void loadOrPersistFromDb() {
+        if (executor == null || subjectDao == null) return;
+        executor.execute(() -> {
+            try {
+                List<SubjectEntity> list = subjectDao.getAllSubjectsSync();
+                if (list == null || list.isEmpty()) {
+                    saveAllToDbSync();
+                } else {
+                    reconstructFromDb(list);
+                }
+            } catch (Exception ignored) {
+            }
+        });
+    }
+
+    private synchronized void saveAllToDbSync() {
+        if (subjectDao == null) return;
+        List<SubjectEntity> entities = new ArrayList<>();
+        collectEntitiesRecursive(rootNodes, entities);
+        subjectDao.deleteAll();
+        subjectDao.insertAll(entities);
+    }
+
+    private void collectEntitiesRecursive(List<HierarchyNode> nodes, List<SubjectEntity> out) {
+        for (HierarchyNode n : nodes) {
+            out.add(new SubjectEntity(
+                    String.valueOf(n.getId()),
+                    "mesh-a",
+                    n.getUserId() != null ? n.getUserId() : 0L,
+                    n.getName(),
+                    n.getParentId() != null ? String.valueOf(n.getParentId()) : null,
+                    n.getType().name(),
+                    n.getHierarchyPath()
+            ));
+            collectEntitiesRecursive(n.getChildren(), out);
+        }
+    }
+
+    private synchronized void reconstructFromDb(List<SubjectEntity> list) {
+        Map<Long, HierarchyNode> nodeMap = new HashMap<>();
+        List<HierarchyNode> newRoots = new ArrayList<>();
+        long maxId = 100L;
+
+        for (SubjectEntity entity : list) {
+            try {
+                long id = Long.parseLong(entity.id);
+                if (id >= maxId) {
+                    maxId = id + 1;
+                }
+                HierarchyNode.NodeType type = HierarchyNode.NodeType.SOLDIER;
+                if (entity.nodeType != null) {
+                    try {
+                        type = HierarchyNode.NodeType.valueOf(entity.nodeType);
+                    } catch (Exception ignored) {}
+                }
+                Long parentId = entity.parentId != null ? Long.parseLong(entity.parentId) : null;
+                Long userId = entity.userId > 0 ? entity.userId : null;
+                HierarchyNode node = new HierarchyNode(id, entity.name, type, parentId, userId, entity.hierarchyPath);
+                nodeMap.put(id, node);
+            } catch (Exception ignored) {}
+        }
+
+        for (HierarchyNode node : nodeMap.values()) {
+            if (node.getParentId() != null && nodeMap.containsKey(node.getParentId())) {
+                nodeMap.get(node.getParentId()).addChild(node);
+            } else {
+                newRoots.add(node);
+            }
+        }
+
+        if (!newRoots.isEmpty()) {
+            rootNodes.clear();
+            rootNodes.addAll(newRoots);
+            nextNodeId = maxId;
+        }
+    }
+
     public synchronized List<HierarchyNode> getRootNodes() {
         return rootNodes;
+    }
+
+    public synchronized List<Long> getAllUnitUserIds() {
+        List<Long> userIds = new ArrayList<>();
+        collectUserIdsRecursive(rootNodes, userIds);
+        if (userIds.isEmpty()) {
+            userIds.add(1001L);
+            userIds.add(1002L);
+            userIds.add(1003L);
+        }
+        return userIds;
+    }
+
+    private void collectUserIdsRecursive(List<HierarchyNode> nodes, List<Long> out) {
+        for (HierarchyNode node : nodes) {
+            if (node.getType() == HierarchyNode.NodeType.SOLDIER && node.getUserId() != null) {
+                if (!out.contains(node.getUserId())) {
+                    out.add(node.getUserId());
+                }
+            }
+            collectUserIdsRecursive(node.getChildren(), out);
+        }
     }
 
     public synchronized HierarchyNode findNodeById(long id) {
@@ -84,11 +199,36 @@ public class UnitHierarchyManager {
         } else {
             rootNodes.add(node);
         }
+
+        if (subjectDao != null && executor != null) {
+            executor.execute(() -> {
+                try {
+                    subjectDao.insert(new SubjectEntity(
+                            String.valueOf(node.getId()),
+                            "mesh-a",
+                            node.getUserId() != null ? node.getUserId() : 0L,
+                            node.getName(),
+                            node.getParentId() != null ? String.valueOf(node.getParentId()) : null,
+                            node.getType().name(),
+                            node.getHierarchyPath()
+                    ));
+                } catch (Exception ignored) {}
+            });
+        }
+
         return node;
     }
 
     public synchronized boolean removeNode(long id) {
-        return removeNodeRecursive(rootNodes, id);
+        boolean removed = removeNodeRecursive(rootNodes, id);
+        if (removed && subjectDao != null && executor != null) {
+            executor.execute(() -> {
+                try {
+                    subjectDao.deleteById(String.valueOf(id));
+                } catch (Exception ignored) {}
+            });
+        }
+        return removed;
     }
 
     private boolean removeNodeRecursive(List<HierarchyNode> nodes, long id) {

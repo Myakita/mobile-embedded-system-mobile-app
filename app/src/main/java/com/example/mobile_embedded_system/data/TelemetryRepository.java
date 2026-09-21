@@ -131,4 +131,12 @@ public class TelemetryRepository {
             });
         }
     }
+
+    public SubjectDao getSubjectDao() {
+        return subjectDao;
+    }
+
+    public ExecutorService getExecutorService() {
+        return executorService;
+    }
 }
