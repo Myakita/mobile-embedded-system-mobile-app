@@ -227,6 +227,14 @@ public class MqttTransportManager {
                 dedupCache.add(packetKey);
             }
 
+            // AC-01.3: Детектирование несогласованности привязки и входного сообщения
+            if (!repository.isDeviceBindingValid(networkRoot, payload.getDeviceSerial(), payload.getUserId())) {
+                diagnosticsModel.incrementBindingMismatchErrors();
+                Log.e(TAG, "ОШИБКА НЕСОГЛАСОВАННОСТИ (AC-01.3): Устройство [" + payload.getDeviceSerial() +
+                        "] привязано к другому бойцу, а пакет поступил с userId=" + payload.getUserId());
+                return;
+            }
+
             if (payload.isTelemetry()) {
                 diagnosticsModel.incrementTelemetryPackets();
             } else if (payload.isCommand()) {

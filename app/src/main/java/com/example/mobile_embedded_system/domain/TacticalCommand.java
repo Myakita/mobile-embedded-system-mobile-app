@@ -38,6 +38,14 @@ public class TacticalCommand {
         return new TacticalCommand(targetUserId, LMashPayload.CMD_CHECK_IN, CMD_CHECK_IN, "CHECK_IN", 0.0, 0.0);
     }
 
+    public static TacticalCommand createHold(long targetUserId, double latitude, double longitude) {
+        return new TacticalCommand(targetUserId, LMashPayload.CMD_HOLD, CMD_HOLD, "HOLD", latitude, longitude);
+    }
+
+    public static TacticalCommand createReturn(long targetUserId) {
+        return new TacticalCommand(targetUserId, LMashPayload.CMD_RETURN, CMD_RETURN, "RETURN", 0.0, 0.0);
+    }
+
     public String getCommand() {
         return command;
     }

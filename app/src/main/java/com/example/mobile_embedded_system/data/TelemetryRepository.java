@@ -53,12 +53,22 @@ public class TelemetryRepository {
     }
 
     public TelemetryRepository(TelemetryDao telemetryDao, DeviceConfigDao deviceConfigDao, ExecutorService executorService) {
+        this(telemetryDao, deviceConfigDao, null, null, null, null, executorService);
+    }
+
+    public TelemetryRepository(TelemetryDao telemetryDao,
+                               DeviceConfigDao deviceConfigDao,
+                               NetworkDao networkDao,
+                               SubjectDao subjectDao,
+                               DeviceDao deviceDao,
+                               CommandDao commandDao,
+                               ExecutorService executorService) {
         this.telemetryDao = telemetryDao;
         this.deviceConfigDao = deviceConfigDao;
-        this.networkDao = null;
-        this.subjectDao = null;
-        this.deviceDao = null;
-        this.commandDao = null;
+        this.networkDao = networkDao;
+        this.subjectDao = subjectDao;
+        this.deviceDao = deviceDao;
+        this.commandDao = commandDao;
         this.executorService = executorService;
     }
 
@@ -122,6 +132,18 @@ public class TelemetryRepository {
         return telemetryDao != null ? telemetryDao.getHistoryForUserSync(userId, sinceTimestamp) : Collections.emptyList();
     }
 
+    public LiveData<TelemetryEntity> getLatestTelemetryForUserInNetwork(long userId, String networkId) {
+        return telemetryDao != null ? telemetryDao.getLatestTelemetryForUserInNetwork(userId, networkId) : null;
+    }
+
+    public LiveData<List<TelemetryEntity>> getHistoryForUserInNetwork(long userId, String networkId, long sinceTimestamp) {
+        return telemetryDao != null ? telemetryDao.getHistoryForUserInNetwork(userId, networkId, sinceTimestamp) : null;
+    }
+
+    public List<TelemetryEntity> getHistoryForUserInNetworkSync(long userId, String networkId, long sinceTimestamp) {
+        return telemetryDao != null ? telemetryDao.getHistoryForUserInNetworkSync(userId, networkId, sinceTimestamp) : Collections.emptyList();
+    }
+
     /**
      * Фоновая регламентная очистка старых пакетов телеметрии через управляемый пул потоков.
      * @param cutoffTimestampSec временная граница в секундах Unix Epoch.
@@ -171,12 +193,72 @@ public class TelemetryRepository {
         if (deviceDao != null && executorService != null && !executorService.isShutdown()) {
             executorService.execute(() -> {
                 try {
-                    deviceDao.insert(device);
-                    if (callback != null) callback.onResult(true);
+                    DeviceEntity existing = deviceDao.getDeviceBySerialSync(device.networkId, device.serial);
+                    if (existing != null) {
+                        if (!java.util.Objects.equals(existing.subjectId, device.subjectId)) {
+                            android.util.Log.w("TelemetryRepository", "Silent overwrite attempt blocked for device: " + device.serial);
+                            if (callback != null) callback.onResult(false);
+                        } else {
+                            existing.lastSeenMs = device.lastSeenMs;
+                            deviceDao.update(existing);
+                            if (callback != null) callback.onResult(true);
+                        }
+                    } else {
+                        deviceDao.insertWithAbort(device);
+                        if (callback != null) callback.onResult(true);
+                    }
                 } catch (Exception e) {
                     if (callback != null) callback.onResult(false);
                 }
             });
+        }
+    }
+
+    /**
+     * Явное переназначение устройства новому бойцу (AC-01.3).
+     */
+    public void reassignDevice(String networkId, long serial, String newSubjectId, InsertCallback callback) {
+        if (deviceDao != null && executorService != null && !executorService.isShutdown()) {
+            executorService.execute(() -> {
+                try {
+                    DeviceEntity existing = deviceDao.getDeviceBySerialSync(networkId, serial);
+                    if (existing != null) {
+                        existing.subjectId = newSubjectId;
+                        existing.lastSeenMs = System.currentTimeMillis();
+                        deviceDao.update(existing);
+                        if (callback != null) callback.onResult(true);
+                    } else {
+                        DeviceEntity dev = new DeviceEntity(
+                                java.util.UUID.randomUUID().toString(),
+                                networkId,
+                                serial,
+                                newSubjectId,
+                                System.currentTimeMillis()
+                        );
+                        deviceDao.insertWithAbort(dev);
+                        if (callback != null) callback.onResult(true);
+                    }
+                } catch (Exception e) {
+                    if (callback != null) callback.onResult(false);
+                }
+            });
+        }
+    }
+
+    /**
+     * Проверка соответствия серийного номера устройства и userId по таблице привязок (AC-01.3).
+     * @return true если привязка совпадает либо устройство пока не привязано в БД.
+     */
+    public boolean isDeviceBindingValid(String networkId, long deviceSerial, long userId) {
+        if (deviceDao == null || subjectDao == null) return true;
+        try {
+            DeviceEntity dev = deviceDao.getDeviceBySerialSync(networkId, deviceSerial);
+            if (dev == null || dev.subjectId == null) return true;
+            SubjectEntity subj = subjectDao.getSubjectByIdSync(dev.subjectId);
+            if (subj == null || subj.userId == null) return true;
+            return subj.userId.longValue() == userId;
+        } catch (Exception e) {
+            return true;
         }
     }
 
@@ -190,5 +272,23 @@ public class TelemetryRepository {
 
     public DeviceEntity getDeviceBySerialSync(String networkId, long serial) {
         return deviceDao != null ? deviceDao.getDeviceBySerialSync(networkId, serial) : null;
+    }
+
+    public DeviceEntity getDeviceBySubjectSync(String networkId, String subjectId) {
+        return deviceDao != null ? deviceDao.getDeviceBySubjectSync(networkId, subjectId) : null;
+    }
+
+    public DeviceEntity getDeviceForUserSync(String networkId, long userId) {
+        if (subjectDao != null && deviceDao != null) {
+            SubjectEntity subject = subjectDao.getSubjectByUserIdSync(networkId, userId);
+            if (subject != null) {
+                DeviceEntity device = deviceDao.getDeviceBySubjectSync(networkId, subject.id);
+                if (device != null) return device;
+            }
+            DeviceEntity devDirect = deviceDao.getDeviceBySubjectSync(networkId, String.valueOf(userId));
+            if (devDirect != null) return devDirect;
+            return deviceDao.getDeviceBySubjectSync(networkId, "sub-" + userId);
+        }
+        return null;
     }
 }

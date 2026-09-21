@@ -23,6 +23,15 @@ public interface TelemetryDao {
     @Query("SELECT * FROM telemetry_records WHERE user_id = :userId AND timestamp >= :fromTimestamp ORDER BY timestamp ASC, sequence ASC")
     List<TelemetryEntity> getHistoryForUserSync(long userId, long fromTimestamp);
 
+    @Query("SELECT * FROM telemetry_records WHERE user_id = :userId AND network_id = :networkId ORDER BY timestamp DESC, sequence DESC LIMIT 1")
+    LiveData<TelemetryEntity> getLatestTelemetryForUserInNetwork(long userId, String networkId);
+
+    @Query("SELECT * FROM telemetry_records WHERE user_id = :userId AND network_id = :networkId AND timestamp >= :fromTimestamp ORDER BY timestamp ASC, sequence ASC")
+    LiveData<List<TelemetryEntity>> getHistoryForUserInNetwork(long userId, String networkId, long fromTimestamp);
+
+    @Query("SELECT * FROM telemetry_records WHERE user_id = :userId AND network_id = :networkId AND timestamp >= :fromTimestamp ORDER BY timestamp ASC, sequence ASC")
+    List<TelemetryEntity> getHistoryForUserInNetworkSync(long userId, String networkId, long fromTimestamp);
+
     /**
      * Удаление устаревших записей телеметрии по времени формирования (в секундах Unix Epoch).
      */

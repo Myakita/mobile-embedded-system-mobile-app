@@ -19,6 +19,8 @@ public class PacketDiagnosticsModelTest {
         assertEquals(0L, model.getDuplicatesDroppedCount());
         assertEquals(0L, model.getDecryptionErrorsCount());
         assertEquals(0L, model.getMalformedPacketsCount());
+        assertEquals(0L, model.getBindingMismatchErrorsCount());
+        assertEquals(0L, model.getDirectWifiPacketsCount());
     }
 
     @Test
@@ -31,6 +33,8 @@ public class PacketDiagnosticsModelTest {
         model.incrementDuplicatesDropped();
         model.incrementDecryptionErrors();
         model.incrementMalformedPackets();
+        model.incrementBindingMismatchErrors();
+        model.incrementDirectWifiPackets();
 
         assertEquals(1L, model.getTotalPacketsReceived());
         assertEquals(1L, model.getTelemetryPacketsCount());
@@ -38,6 +42,8 @@ public class PacketDiagnosticsModelTest {
         assertEquals(1L, model.getDuplicatesDroppedCount());
         assertEquals(1L, model.getDecryptionErrorsCount());
         assertEquals(1L, model.getMalformedPacketsCount());
+        assertEquals(1L, model.getBindingMismatchErrorsCount());
+        assertEquals(1L, model.getDirectWifiPacketsCount());
 
         model.resetCounters();
 
@@ -47,6 +53,8 @@ public class PacketDiagnosticsModelTest {
         assertEquals(0L, model.getDuplicatesDroppedCount());
         assertEquals(0L, model.getDecryptionErrorsCount());
         assertEquals(0L, model.getMalformedPacketsCount());
+        assertEquals(0L, model.getBindingMismatchErrorsCount());
+        assertEquals(0L, model.getDirectWifiPacketsCount());
     }
 
     @Test

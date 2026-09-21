@@ -2,6 +2,7 @@ package com.example.mobile_embedded_system.data.local;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Index;
 
 import com.example.mobile_embedded_system.data.model.LMashPayload;
 
@@ -11,7 +12,11 @@ import com.example.mobile_embedded_system.data.model.LMashPayload;
  */
 @Entity(
         tableName = "telemetry_records",
-        primaryKeys = {"device_serial", "sequence"}
+        primaryKeys = {"device_serial", "sequence"},
+        indices = {
+                @Index(value = {"user_id", "timestamp"}),
+                @Index(value = {"network_id"})
+        }
 )
 public class TelemetryEntity {
 

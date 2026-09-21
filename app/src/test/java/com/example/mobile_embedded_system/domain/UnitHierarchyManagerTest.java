@@ -222,6 +222,21 @@ public class UnitHierarchyManagerTest {
             subjects.removeIf(s -> networkId.equals(s.networkId));
         }
 
+        @Override
+        public SubjectEntity getSubjectByIdSync(String id) {
+            return findById(id);
+        }
+
+        @Override
+        public SubjectEntity getSubjectByUserIdSync(String networkId, long userId) {
+            for (SubjectEntity s : subjects) {
+                if (networkId.equals(s.networkId) && s.userId != null && s.userId == userId) {
+                    return s;
+                }
+            }
+            return null;
+        }
+
         SubjectEntity findById(String id) {
             for (SubjectEntity s : subjects) {
                 if (s.id.equals(id)) return s;

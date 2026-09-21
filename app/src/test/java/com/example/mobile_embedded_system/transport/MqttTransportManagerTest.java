@@ -170,6 +170,21 @@ public class MqttTransportManagerTest {
         }
 
         @Override
+        public LiveData<TelemetryEntity> getLatestTelemetryForUserInNetwork(long userId, String networkId) {
+            return new MutableLiveData<>();
+        }
+
+        @Override
+        public LiveData<List<TelemetryEntity>> getHistoryForUserInNetwork(long userId, String networkId, long fromTimestamp) {
+            return new MutableLiveData<>();
+        }
+
+        @Override
+        public List<TelemetryEntity> getHistoryForUserInNetworkSync(long userId, String networkId, long fromTimestamp) {
+            return new ArrayList<>();
+        }
+
+        @Override
         public int deleteOlderThan(long timestampThreshold) {
             return 0;
         }

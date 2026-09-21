@@ -106,27 +106,48 @@ public class UsersFragment extends Fragment {
 
             @Override
             public void onUserLongClick(UsersAdapter.UserItem userItem) {
-                showCheckInConfirmationDialog(userItem);
+                showCommandSelectionDialog(userItem);
             }
         });
 
         recyclerView.setAdapter(adapter);
     }
 
-    private void showCheckInConfirmationDialog(UsersAdapter.UserItem userItem) {
+    private void showCommandSelectionDialog(UsersAdapter.UserItem userItem) {
+        String[] commands = {
+            "CHECK_IN — ЗАПРОС КВИТАНЦИИ",
+            "HOLD — УДЕРЖАНИЕ ПОЗИЦИИ",
+            "RETURN — ВОЗВРАТ НА БАЗУ"
+        };
         new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                .setTitle("КОМАНДА СВЯЗИ (CHECK-IN)")
-                .setMessage("Отправить команду CHECK_IN (запрос квитанции) бойцу " + userItem.callsign + "?")
-                .setPositiveButton("ОТПРАВИТЬ", (dialog, which) -> {
-                    boolean sent = viewModel.dispatchCheckInCommand(userItem.userId);
-                    if (sent) {
-                        Toast.makeText(requireContext(), "КОМАНДА CHECK_IN ПЕРЕДАНА В ЭФИР -> " + userItem.callsign, Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(requireContext(), "ОШИБКА: НЕТ СВЯЗИ С БРОКЕРОМ (MQTT ОТКЛЮЧЕН)", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("ОТМЕНА", null)
-                .show();
+            .setTitle("ПРИКАЗ -> " + userItem.callsign)
+            .setItems(commands, (dialog, which) -> {
+                boolean sent;
+                String cmdName;
+                switch (which) {
+                    case 0:
+                        sent = viewModel.dispatchCheckInCommand(userItem.userId);
+                        cmdName = "CHECK_IN";
+                        break;
+                    case 1:
+                        sent = viewModel.dispatchHoldCommand(userItem.userId);
+                        cmdName = "HOLD";
+                        break;
+                    case 2:
+                        sent = viewModel.dispatchReturnCommand(userItem.userId);
+                        cmdName = "RETURN";
+                        break;
+                    default:
+                        return;
+                }
+                if (sent) {
+                    Toast.makeText(requireContext(), cmdName + " -> " + userItem.callsign, Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(requireContext(), "ОШИБКА ОТПРАВКИ " + cmdName, Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton("ОТМЕНА", null)
+            .show();
     }
 
     private void setupFilters() {
@@ -231,10 +252,7 @@ public class UsersFragment extends Fragment {
     }
 
     private long getSerialByUserId(long userId) {
-        if (userId == 1001L) return 99881100L;
-        if (userId == 1002L) return 99881122L;
-        if (userId == 1003L) return 99881144L;
-        return 99881100L + userId;
+        return viewModel.getSerialForUser(userId);
     }
 
     private int resolveColor(int attrResId) {

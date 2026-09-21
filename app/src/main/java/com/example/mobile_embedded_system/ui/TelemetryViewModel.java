@@ -6,10 +6,12 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Transformations;
 
 import com.example.mobile_embedded_system.data.MockTelemetryGenerator;
 import com.example.mobile_embedded_system.data.TelemetryRepository;
 import com.example.mobile_embedded_system.data.local.DeviceConfigEntity;
+import com.example.mobile_embedded_system.data.local.DeviceEntity;
 import com.example.mobile_embedded_system.data.local.NetworkEntity;
 import com.example.mobile_embedded_system.data.local.TelemetryEntity;
 import com.example.mobile_embedded_system.data.model.ConfigSyncState;
@@ -24,6 +26,7 @@ import com.example.mobile_embedded_system.domain.GpxTrackSerializer;
 import com.example.mobile_embedded_system.domain.HierarchyNode;
 import com.example.mobile_embedded_system.domain.KmlTrackSerializer;
 import com.example.mobile_embedded_system.security.KeyStoreManager;
+import com.example.mobile_embedded_system.transport.DirectConnectionManager;
 import com.example.mobile_embedded_system.transport.MqttTransportManager;
 import com.example.mobile_embedded_system.domain.TacticalCommand;
 import com.example.mobile_embedded_system.domain.Waypoint;
@@ -49,6 +52,7 @@ public class TelemetryViewModel extends AndroidViewModel {
         DISCONNECTED,
         CONNECTING,
         CONNECTED,
+        DIRECT_WIFI,
         MOCK_MODE
     }
 
@@ -67,6 +71,7 @@ public class TelemetryViewModel extends AndroidViewModel {
     private final KeyStoreManager keyStoreManager;
     private final MockTelemetryGenerator mockGenerator;
     private final MqttTransportManager mqttTransport;
+    private final DirectConnectionManager directTransport;
     private final TacticalWaypointManager waypointManager;
     private final UnitHierarchyManager hierarchyManager;
 
@@ -80,6 +85,8 @@ public class TelemetryViewModel extends AndroidViewModel {
     private double lastBearing = 0.0;
     private boolean hasSavedCamera = false;
 
+    private final java.util.Map<Long, Long> userSerialCache = new java.util.concurrent.ConcurrentHashMap<>();
+
     private long activeUserId = 1001L;
     private boolean isTrackUp = false;
 
@@ -89,9 +96,11 @@ public class TelemetryViewModel extends AndroidViewModel {
         this.keyStoreManager = new KeyStoreManager();
         this.mockGenerator = new MockTelemetryGenerator(this);
         this.mqttTransport = new MqttTransportManager(repository, keyStoreManager);
+        this.directTransport = new DirectConnectionManager(repository, keyStoreManager, mqttTransport.getDiagnosticsModel());
         this.waypointManager = new TacticalWaypointManager();
         this.hierarchyManager = new UnitHierarchyManager(repository.getSubjectDao(), repository.getExecutorService());
 
+        prewarmUserSerialCache("mesh-a");
         startMockMode();
     }
 
@@ -102,6 +111,45 @@ public class TelemetryViewModel extends AndroidViewModel {
     public String getCallsignForUser(long userId) {
         HierarchyNode node = hierarchyManager.findNodeByUserId(userId);
         return (node != null && node.getName() != null) ? node.getName().toUpperCase(Locale.ROOT) : "БОЕЦ [" + userId + "]";
+    }
+
+    public long getSerialForUser(long userId) {
+        Long cached = userSerialCache.get(userId);
+        if (cached != null) {
+            return cached;
+        }
+
+        final long fallback;
+        if (userId == 1001L) fallback = 99881100L;
+        else if (userId == 1002L) fallback = 99881101L;
+        else if (userId == 1003L) fallback = 99881102L;
+        else fallback = userId;
+
+        String netId = activeNetworkId.getValue() != null ? activeNetworkId.getValue() : "mesh-a";
+        if (repository != null && repository.getExecutorService() != null && !repository.getExecutorService().isShutdown()) {
+            repository.getExecutorService().execute(() -> {
+                DeviceEntity device = repository.getDeviceForUserSync(netId, userId);
+                if (device != null) {
+                    userSerialCache.put(userId, device.serial);
+                } else {
+                    userSerialCache.put(userId, fallback);
+                }
+            });
+        }
+        return fallback;
+    }
+
+    private void prewarmUserSerialCache(String networkId) {
+        if (repository != null && repository.getExecutorService() != null && !repository.getExecutorService().isShutdown()) {
+            repository.getExecutorService().execute(() -> {
+                for (long uid : hierarchyManager.getAllUnitUserIds()) {
+                    DeviceEntity device = repository.getDeviceForUserSync(networkId, uid);
+                    if (device != null) {
+                        userSerialCache.put(uid, device.serial);
+                    }
+                }
+            });
+        }
     }
 
     public java.util.concurrent.ExecutorService getRepositoryExecutor() {
@@ -115,7 +163,10 @@ public class TelemetryViewModel extends AndroidViewModel {
     public void setActiveNetworkId(String networkId) {
         if (networkId != null && !networkId.equals(activeNetworkId.getValue())) {
             activeNetworkId.setValue(networkId);
+            userSerialCache.clear();
+            prewarmUserSerialCache(networkId);
             mqttTransport.setNetworkConfig(networkId, "7F10/21A0");
+            directTransport.setNetworkRoot(networkId);
             if (repository.getSubjectDao() != null && repository.getExecutorService() != null) {
                 repository.getExecutorService().execute(() -> {
                     List<SubjectEntity> subjects = repository.getSubjectDao().getSubjectsForNetworkSync(networkId);
@@ -183,11 +234,15 @@ public class TelemetryViewModel extends AndroidViewModel {
     }
 
     public LiveData<TelemetryEntity> getLatestTelemetry(long userId) {
-        return repository.getLatestTelemetryForUser(userId);
+        return Transformations.switchMap(activeNetworkId, netId ->
+                repository.getLatestTelemetryForUserInNetwork(userId, netId != null ? netId : "mesh-a")
+        );
     }
 
     public LiveData<List<TelemetryEntity>> getHistory(long userId, long since) {
-        return repository.getHistoryForUser(userId, since);
+        return Transformations.switchMap(activeNetworkId, netId ->
+                repository.getHistoryForUserInNetwork(userId, netId != null ? netId : "mesh-a", since)
+        );
     }
 
     public LiveData<ConnectionState> getConnectionState() {
@@ -208,12 +263,14 @@ public class TelemetryViewModel extends AndroidViewModel {
 
     public void startMockMode() {
         mqttTransport.disconnect();
+        directTransport.disconnect();
         mockGenerator.start();
         connectionState.postValue(ConnectionState.MOCK_MODE);
     }
 
     public void startMqttMode(String brokerUrl, String clientId) {
         mockGenerator.stop();
+        directTransport.disconnect();
         connectionState.postValue(ConnectionState.CONNECTING);
 
         mqttTransport.connect(brokerUrl, clientId, new MqttTransportManager.ConnectionCallback() {
@@ -234,11 +291,42 @@ public class TelemetryViewModel extends AndroidViewModel {
         });
     }
 
+    /**
+     * Прямое подключение к Edge по локальному Wi-Fi без внешнего брокера (US-11, AC-07).
+     */
+    public void startDirectWifiMode(String host, int port) {
+        mockGenerator.stop();
+        mqttTransport.disconnect();
+        connectionState.postValue(ConnectionState.CONNECTING);
+
+        directTransport.connect(host, port, new DirectConnectionManager.ConnectionCallback() {
+            @Override
+            public void onConnected() {
+                connectionState.postValue(ConnectionState.DIRECT_WIFI);
+            }
+
+            @Override
+            public void onDisconnected(String reason) {
+                connectionState.postValue(ConnectionState.DISCONNECTED);
+            }
+
+            @Override
+            public void onError(String error) {
+                connectionState.postValue(ConnectionState.DISCONNECTED);
+            }
+        });
+    }
+
+    public DirectConnectionManager getDirectTransport() {
+        return directTransport;
+    }
+
     @Override
     protected void onCleared() {
         super.onCleared();
         mockGenerator.stop();
         mqttTransport.disconnect();
+        directTransport.disconnect();
     }
     public void pruneOldTelemetry(long retentionMillis) {
         long cutoffTimestampSec = (System.currentTimeMillis() - retentionMillis) / 1000L;
@@ -354,8 +442,15 @@ public class TelemetryViewModel extends AndroidViewModel {
                 System.currentTimeMillis()
         ));
 
-        // 4. Отправляем в эфир MQTT (если подключены)
-        return mqttTransport.publishCommand(command, activeUserId);
+        // 4. Отправляем в эфир MQTT или Direct Wi-Fi
+        boolean sent = false;
+        if (directTransport.isConnected()) {
+            sent |= directTransport.sendCommandDirect(command, activeUserId);
+        }
+        if (mqttTransport.isConnected()) {
+            sent |= mqttTransport.publishCommand(command, activeUserId);
+        }
+        return sent;
     }
 
     /**
@@ -383,7 +478,60 @@ public class TelemetryViewModel extends AndroidViewModel {
                 System.currentTimeMillis()
         ));
 
-        return mqttTransport.publishCommand(command, activeUserId);
+        boolean sent = false;
+        if (directTransport.isConnected()) {
+            sent |= directTransport.sendCommandDirect(command, activeUserId);
+        }
+        if (mqttTransport.isConnected()) {
+            sent |= mqttTransport.publishCommand(command, activeUserId);
+        }
+        return sent;
+    }
+
+    public boolean dispatchHoldCommand(long targetUserId) {
+        return dispatchHoldCommand(targetUserId, 0.0, 0.0);
+    }
+
+    public boolean dispatchHoldCommand(long targetUserId, double lat, double lon) {
+        if (!hierarchyManager.isSubordinate(activeUserId, targetUserId)) {
+            Log.w("TelemetryVM", "Отказ отправки HOLD: [" + activeUserId + "] не уполномочен [" + targetUserId + "]");
+            return false;
+        }
+        TacticalCommand command = TacticalCommand.createHold(targetUserId, lat, lon);
+        String netId = activeNetworkId.getValue() != null ? activeNetworkId.getValue() : "mesh-a";
+        repository.insertCommand(new CommandEntity(
+                UUID.randomUUID().toString(), netId, activeUserId, targetUserId,
+                LMashPayload.CMD_HOLD, System.currentTimeMillis(), System.currentTimeMillis()));
+
+        boolean sent = false;
+        if (directTransport.isConnected()) {
+            sent |= directTransport.sendCommandDirect(command, activeUserId);
+        }
+        if (mqttTransport.isConnected()) {
+            sent |= mqttTransport.publishCommand(command, activeUserId);
+        }
+        return sent;
+    }
+
+    public boolean dispatchReturnCommand(long targetUserId) {
+        if (!hierarchyManager.isSubordinate(activeUserId, targetUserId)) {
+            Log.w("TelemetryVM", "Отказ отправки RETURN: [" + activeUserId + "] не уполномочен [" + targetUserId + "]");
+            return false;
+        }
+        TacticalCommand command = TacticalCommand.createReturn(targetUserId);
+        String netId = activeNetworkId.getValue() != null ? activeNetworkId.getValue() : "mesh-a";
+        repository.insertCommand(new CommandEntity(
+                UUID.randomUUID().toString(), netId, activeUserId, targetUserId,
+                LMashPayload.CMD_RETURN, System.currentTimeMillis(), System.currentTimeMillis()));
+
+        boolean sent = false;
+        if (directTransport.isConnected()) {
+            sent |= directTransport.sendCommandDirect(command, activeUserId);
+        }
+        if (mqttTransport.isConnected()) {
+            sent |= mqttTransport.publishCommand(command, activeUserId);
+        }
+        return sent;
     }
 
     public LiveData<List<CommandEntity>> getCommandsForActiveNetwork() {

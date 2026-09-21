@@ -15,7 +15,7 @@ import androidx.room.RoomDatabase;
                 DeviceEntity.class,
                 CommandEntity.class
         },
-        version = 5,
+        version = 6,
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -37,7 +37,8 @@ public abstract class AppDatabase extends RoomDatabase {
                             context.getApplicationContext(),
                             AppDatabase.class,
                             "unit_monitor_db"
-                    ).fallbackToDestructiveMigration().build();
+                    ).allowMainThreadQueries()
+                    .fallbackToDestructiveMigration().build();
                 }
             }
         }

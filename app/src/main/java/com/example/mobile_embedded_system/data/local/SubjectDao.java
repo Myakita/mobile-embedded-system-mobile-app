@@ -32,6 +32,12 @@ public interface SubjectDao {
     @Query("SELECT * FROM subjects WHERE network_id = :networkId")
     List<SubjectEntity> getSubjectsForNetworkSync(String networkId);
 
+    @Query("SELECT * FROM subjects WHERE id = :id LIMIT 1")
+    SubjectEntity getSubjectByIdSync(String id);
+
+    @Query("SELECT * FROM subjects WHERE network_id = :networkId AND user_id = :userId LIMIT 1")
+    SubjectEntity getSubjectByUserIdSync(String networkId, long userId);
+
     @Query("DELETE FROM subjects WHERE network_id = :networkId")
     void deleteForNetwork(String networkId);
 }

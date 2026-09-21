@@ -43,6 +43,7 @@ import com.example.mobile_embedded_system.domain.PositionStatusEvaluator;
 
 import com.example.mobile_embedded_system.data.local.TelemetryEntity;
 import com.example.mobile_embedded_system.domain.SquadAlertManager;
+import com.example.mobile_embedded_system.domain.TacticalCentroidCalculator;
 import com.example.mobile_embedded_system.domain.TacticalNavigationCalculator;
 import com.example.mobile_embedded_system.domain.TacticalRangeRingGenerator;
 import com.example.mobile_embedded_system.domain.TacticalStatusEvaluator;
@@ -109,6 +110,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private final Map<Long, Polyline> tacticalTracks = new HashMap<>();
     private final Map<Long, TelemetryEntity> squadLatestData = new HashMap<>();
     private final List<Polyline> rangeRingPolylines = new ArrayList<>();
+    private Marker centroidMarker = null;
+    private Polyline dispersionPolyline = null;
     private boolean isExporting = false;
     private long activeUserId = 1001L;
     private Long currentAlertUserId = null;
@@ -264,7 +267,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
         containerUnitButtons = requireView().findViewById(R.id.containerUnitButtons);
 
-        requireView().findViewById(R.id.panelTelemetry).setOnClickListener(v -> snapCameraToActiveUnit());
+        View panelTelemetry = requireView().findViewById(R.id.panelTelemetry);
+        panelTelemetry.setOnClickListener(v -> snapCameraToActiveUnit());
+        panelTelemetry.setOnLongClickListener(v -> {
+            showTacticalCommandDialog(activeUserId);
+            return true;
+        });
 
         mapView = requireView().findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
@@ -298,6 +306,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             btn.setMinWidth(dpToPx(64));
 
             btn.setOnClickListener(v -> selectActiveUnit(uid));
+            btn.setOnLongClickListener(v -> {
+                showTacticalCommandDialog(uid);
+                return true;
+            });
             containerUnitButtons.addView(btn);
         }
     }
@@ -427,6 +439,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         waypointMarkers.clear();
         tacticalTracks.clear();
         rangeRingPolylines.clear();
+        centroidMarker = null;
+        dispersionPolyline = null;
 
         map.getUiSettings().setLogoEnabled(false);
         map.getUiSettings().setAttributionEnabled(false);
@@ -434,7 +448,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         map.setOnMarkerClickListener(marker -> {
             for (Map.Entry<Long, Marker> entry : tacticalMarkers.entrySet()) {
                 if (entry.getValue().equals(marker)) {
-                    selectActiveUnit(entry.getKey());
+                    long clickedUserId = entry.getKey();
+                    if (clickedUserId == activeUserId) {
+                        showTacticalCommandDialog(clickedUserId);
+                    } else {
+                        selectActiveUnit(clickedUserId);
+                    }
                     return true;
                 }
             }
@@ -494,6 +513,44 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
             observeSquadTelemetry();
         });
+    }
+
+    private void showTacticalCommandDialog(long userId) {
+        String callsign = viewModel.getCallsignForUser(userId);
+        String[] commands = {
+            "CHECK_IN — ЗАПРОС КВИТАНЦИИ",
+            "HOLD — УДЕРЖАНИЕ ПОЗИЦИИ",
+            "RETURN — ВОЗВРАТ НА БАЗУ"
+        };
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("ПРИКАЗ -> " + callsign)
+            .setItems(commands, (dialog, which) -> {
+                boolean sent;
+                String cmdName;
+                switch (which) {
+                    case 0:
+                        sent = viewModel.dispatchCheckInCommand(userId);
+                        cmdName = "CHECK_IN";
+                        break;
+                    case 1:
+                        sent = viewModel.dispatchHoldCommand(userId);
+                        cmdName = "HOLD";
+                        break;
+                    case 2:
+                        sent = viewModel.dispatchReturnCommand(userId);
+                        cmdName = "RETURN";
+                        break;
+                    default:
+                        return;
+                }
+                if (sent) {
+                    Toast.makeText(requireContext(), cmdName + " -> " + callsign, Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(requireContext(), "ОШИБКА ОТПРАВКИ " + cmdName, Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton("ОТМЕНА", null)
+            .show();
     }
 
     private void updateNavigationLine() {
@@ -621,6 +678,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 squadLatestData.put(entity.userId, entity);
                 handleSquadAlerts(entity);
                 updateUnitMarker(entity);
+                updateSquadCentroid();
 
                 if (entity.userId == 1001L) {
                     updateRangeRings(entity.latitude, entity.longitude);
@@ -692,6 +750,83 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 }
             }
         }
+    }
+
+    private void updateSquadCentroid() {
+        if (maplibreMap == null) return;
+        TacticalCentroidCalculator.CentroidResult result = TacticalCentroidCalculator.calculate(squadLatestData.values());
+        if (result == null || result.unitCount < 2) {
+            if (centroidMarker != null) {
+                maplibreMap.removeMarker(centroidMarker);
+                centroidMarker = null;
+            }
+            if (dispersionPolyline != null) {
+                maplibreMap.removePolyline(dispersionPolyline);
+                dispersionPolyline = null;
+            }
+            return;
+        }
+
+        LatLng centerLatLng = new LatLng(result.latitude, result.longitude);
+
+        if (centroidMarker == null) {
+            Bitmap bmp = createCentroidBitmap();
+            Icon icon = IconFactory.getInstance(requireContext()).fromBitmap(bmp);
+            centroidMarker = maplibreMap.addMarker(new MarkerOptions()
+                    .position(centerLatLng)
+                    .title("ЦЕНТРОИД ГРУППЫ")
+                    .snippet(String.format(Locale.US, "Бойцов: %d, Радиус: %.0f м", result.unitCount, result.dispersionRadiusMeters))
+                    .icon(icon));
+        } else {
+            centroidMarker.setPosition(centerLatLng);
+            centroidMarker.setSnippet(String.format(Locale.US, "Бойцов: %d, Радиус: %.0f м", result.unitCount, result.dispersionRadiusMeters));
+        }
+
+        List<LatLng> circlePoints = new ArrayList<>(result.dispersionCirclePoints.size());
+        for (TacticalRangeRingGenerator.GeoPoint gp : result.dispersionCirclePoints) {
+            circlePoints.add(new LatLng(gp.latitude, gp.longitude));
+        }
+
+        int dispersionColor = resolveThemeColor(R.attr.appInk2);
+        if (dispersionPolyline == null) {
+            dispersionPolyline = maplibreMap.addPolyline(new PolylineOptions()
+                    .addAll(circlePoints)
+                    .color(dispersionColor)
+                    .width(1.5f));
+        } else {
+            dispersionPolyline.setPoints(circlePoints);
+            dispersionPolyline.setColor(dispersionColor);
+        }
+    }
+
+    private Bitmap createCentroidBitmap() {
+        int sizePx = 48;
+        Bitmap bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+
+        int inkColor = resolveThemeColor(R.attr.appInk);
+        int surfaceColor = resolveThemeColor(R.attr.appSurface);
+
+        Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        bgPaint.setStyle(Paint.Style.FILL);
+        bgPaint.setColor(surfaceColor);
+
+        Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        strokePaint.setStyle(Paint.Style.STROKE);
+        strokePaint.setStrokeWidth(3f);
+        strokePaint.setColor(inkColor);
+
+        Paint centerDotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        centerDotPaint.setStyle(Paint.Style.FILL);
+        centerDotPaint.setColor(inkColor);
+
+        float center = sizePx / 2f;
+        canvas.drawCircle(center, center, 18f, bgPaint);
+        canvas.drawCircle(center, center, 18f, strokePaint);
+        canvas.drawCircle(center, center, 10f, strokePaint);
+        canvas.drawCircle(center, center, 4f, centerDotPaint);
+
+        return bitmap;
     }
 
     private void handleSquadAlerts(TelemetryEntity entity) {

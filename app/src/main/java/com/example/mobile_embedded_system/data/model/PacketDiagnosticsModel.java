@@ -14,8 +14,10 @@ public class PacketDiagnosticsModel {
     private final AtomicLong duplicatesDroppedCount = new AtomicLong(0L);
     private final AtomicLong decryptionErrorsCount = new AtomicLong(0L);
     private final AtomicLong malformedPacketsCount = new AtomicLong(0L);
+    private final AtomicLong bindingMismatchErrorsCount = new AtomicLong(0L);
+    private final AtomicLong directWifiPacketsCount = new AtomicLong(0L);
 
-    // Состояние MQTT (§1.99)
+    // Состояние соединения (§1.99, AC-07)
     private String brokerUrl = "tcp://broker.hivemq.com:1883";
     private String connectionState = "ОТКЛЮЧЕНО";
     private long lastReconnectTimestampMs = System.currentTimeMillis();
@@ -30,6 +32,8 @@ public class PacketDiagnosticsModel {
     public void incrementDuplicatesDropped() { duplicatesDroppedCount.incrementAndGet(); }
     public void incrementDecryptionErrors() { decryptionErrorsCount.incrementAndGet(); }
     public void incrementMalformedPackets() { malformedPacketsCount.incrementAndGet(); }
+    public void incrementBindingMismatchErrors() { bindingMismatchErrorsCount.incrementAndGet(); }
+    public void incrementDirectWifiPackets() { directWifiPacketsCount.incrementAndGet(); }
 
     public void resetCounters() {
         totalPacketsReceived.set(0L);
@@ -38,6 +42,8 @@ public class PacketDiagnosticsModel {
         duplicatesDroppedCount.set(0L);
         decryptionErrorsCount.set(0L);
         malformedPacketsCount.set(0L);
+        bindingMismatchErrorsCount.set(0L);
+        directWifiPacketsCount.set(0L);
     }
 
     public long getTotalPacketsReceived() { return totalPacketsReceived.get(); }
@@ -46,6 +52,8 @@ public class PacketDiagnosticsModel {
     public long getDuplicatesDroppedCount() { return duplicatesDroppedCount.get(); }
     public long getDecryptionErrorsCount() { return decryptionErrorsCount.get(); }
     public long getMalformedPacketsCount() { return malformedPacketsCount.get(); }
+    public long getBindingMismatchErrorsCount() { return bindingMismatchErrorsCount.get(); }
+    public long getDirectWifiPacketsCount() { return directWifiPacketsCount.get(); }
 
     public String getBrokerUrl() { return brokerUrl; }
     public void setBrokerUrl(String brokerUrl) { this.brokerUrl = brokerUrl; }

@@ -101,6 +101,21 @@ public class TelemetryRepositoryTest {
         }
 
         @Override
+        public LiveData<TelemetryEntity> getLatestTelemetryForUserInNetwork(long userId, String networkId) {
+            return getLatestTelemetryForUser(userId);
+        }
+
+        @Override
+        public LiveData<List<TelemetryEntity>> getHistoryForUserInNetwork(long userId, String networkId, long fromTimestamp) {
+            return getHistoryForUser(userId, fromTimestamp);
+        }
+
+        @Override
+        public List<TelemetryEntity> getHistoryForUserInNetworkSync(long userId, String networkId, long fromTimestamp) {
+            return getHistoryForUserSync(userId, fromTimestamp);
+        }
+
+        @Override
         public int deleteOlderThan(long timestampThreshold) {
             this.lastDeletedThreshold = timestampThreshold;
             return 0;
