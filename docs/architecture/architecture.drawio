@@ -1,0 +1,371 @@
+<mxfile host="drawio" agent="lab3" version="24.0.0" type="device">
+  <diagram id="ctx" name="1. Контекст и границы">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="ctx-0" />
+        <mxCell id="ctx-1" parent="ctx-0" />
+        <mxCell id="ctx-boundary" value="«system» Мобильное приложение (Android, один APK) — разрабатывает команда" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#1F3A5F;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=10;spacingTop=4;fontSize=13;fontStyle=1;fontColor=#1F3A5F;" vertex="1" parent="ctx-1">
+          <mxGeometry x="280" y="60" width="560" height="520" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-l1" value="&lt;b&gt;Представление&lt;/b&gt;&lt;br&gt;Пользовательский интерфейс · Состояние экранов" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=2;fontSize=11;fontStyle=3;fontColor=#1F3A5F;fillColor=#EAF1FA;fontStyle=0;verticalAlign=middle;" vertex="1" parent="ctx-1">
+          <mxGeometry x="310" y="110" width="500" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-l2" value="&lt;b&gt;Предметная логика&lt;/b&gt;&lt;br&gt;Мониторинг и статусы · Реестр сети · Команды · Иерархия и доступ · Конфигурация устройств" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=2;fontSize=11;fontStyle=3;fontColor=#1F3A5F;fillColor=#EEF6EC;fontStyle=0;verticalAlign=middle;" vertex="1" parent="ctx-1">
+          <mxGeometry x="310" y="195" width="500" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-l3" value="&lt;b&gt;Данные и связь&lt;/b&gt;&lt;br&gt;Обмен сообщениями · Протокол LMash · Криптография · Локальное хранилище · Транспорт MQTT · Прямое подключение" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=2;fontSize=11;fontStyle=3;fontColor=#1F3A5F;fillColor=#FCF3E7;fontStyle=0;verticalAlign=middle;" vertex="1" parent="ctx-1">
+          <mxGeometry x="310" y="290" width="500" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-db" value="БД приложения&lt;br&gt;(Room / SQLite)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFFFFF;strokeColor=#1F3A5F;strokeWidth=1.5;fontSize=11;" vertex="1" parent="ctx-1">
+          <mxGeometry x="470" y="400" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-l3db" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;" edge="1" parent="ctx-1" source="ctx-l3" target="ctx-db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-note" value="Детализация модулей — лист «2. Модули приложения»" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#FFFDF0;strokeColor=#B8A96A;align=center;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=10;" vertex="1" parent="ctx-1">
+          <mxGeometry x="340" y="505" width="440" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-actor" value="Оператор / настройщик" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=11;" vertex="1" parent="ctx-1">
+          <mxGeometry x="90" y="230" width="40" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-broker" value="&lt;div style=&quot;font-size:9px;color:#555&quot;&gt;«external»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;MQTT-брокер&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;Mosquitto, TLS + ACL&lt;br&gt;(тестовый стенд)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F2F2F2;strokeColor=#808080;strokeWidth=1.2;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="ctx-1">
+          <mxGeometry x="1060" y="80" width="250" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-broker-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#F2F2F2;strokeColor=#808080;" vertex="1" parent="ctx-1">
+          <mxGeometry x="1286" y="87" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-edge" value="&lt;div style=&quot;font-size:9px;color:#555&quot;&gt;«external»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Edge-устройство (RouterD)&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;LoRa / Wi-Fi / LTE; эмулятор&lt;br&gt;из основного репозитория&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F2F2F2;strokeColor=#808080;strokeWidth=1.2;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="ctx-1">
+          <mxGeometry x="1060" y="330" width="250" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-edge-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#F2F2F2;strokeColor=#808080;" vertex="1" parent="ctx-1">
+          <mxGeometry x="1286" y="337" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-keystore" value="&lt;div style=&quot;font-size:9px;color:#555&quot;&gt;«platform»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Android Keystore&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F2F2F2;strokeColor=#808080;strokeWidth=1.2;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="ctx-1">
+          <mxGeometry x="380" y="700" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-keystore-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#F2F2F2;strokeColor=#808080;" vertex="1" parent="ctx-1">
+          <mxGeometry x="556" y="707" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-maplibre" value="&lt;div style=&quot;font-size:9px;color:#555&quot;&gt;«library»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;MapLibre Native&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;растровые тайлы в assets&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F2F2F2;strokeColor=#808080;strokeWidth=1.2;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="ctx-1">
+          <mxGeometry x="620" y="700" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-maplibre-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#F2F2F2;strokeColor=#808080;" vertex="1" parent="ctx-1">
+          <mxGeometry x="796" y="707" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-protocol" value="&lt;div style=&quot;font-size:9px;color:#555&quot;&gt;«contract»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Репозиторий protocol&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;spec/lmash-v1.md,&lt;br&gt;vectors/*.json&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F2F2F2;strokeColor=#808080;strokeWidth=1.2;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="ctx-1">
+          <mxGeometry x="1060" y="640" width="250" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-protocol-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#F2F2F2;strokeColor=#808080;" vertex="1" parent="ctx-1">
+          <mxGeometry x="1286" y="647" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-u" value="просмотр данных,&lt;br&gt;настройка, команды" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;strokeWidth=1.6;strokeColor=#333333;fontColor=#333333;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.4038;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="ctx-1" source="ctx-actor" target="ctx-boundary">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-app-broker" value="MQTT поверх TLS:&lt;br&gt;подписка на telemetry (QoS 0),&lt;br&gt;публикация command (QoS 1)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;strokeWidth=1.6;strokeColor=#8A4B08;fontColor=#8A4B08;exitX=1;exitY=0.1288;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="ctx-1" source="ctx-boundary" target="ctx-broker">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-app-edge" value="прямое TCP-подключение&lt;br&gt;по локальному Wi-Fi:&lt;br&gt;telemetry, command, конфигурация*" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;strokeWidth=1.6;strokeColor=#8A4B08;fontColor=#8A4B08;exitX=1;exitY=0.6096;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="ctx-1" source="ctx-boundary" target="ctx-edge">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-edge-broker" value="публикация telemetry,&lt;br&gt;подписка на command&lt;br&gt;(через Wi-Fi / LTE)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;strokeWidth=1.6;strokeColor=#8A4B08;fontColor=#8A4B08;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="ctx-1" source="ctx-edge" target="ctx-broker">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-app-keystore" value="ключи профилей" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.3571;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="ctx-1" source="ctx-boundary" target="ctx-keystore">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-app-maplibre" value="отрисовка карты" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.7857;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="ctx-1" source="ctx-boundary" target="ctx-maplibre">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-app-protocol" value="«trace» LMash v1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;dashPattern=1 3;strokeColor=#808080;fontColor=#555555;exitX=1;exitY=0.8846;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.3158;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="ctx-1" source="ctx-boundary" target="ctx-protocol">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="950" y="520" />
+              <mxPoint x="950" y="670" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ctx-edge-protocol" value="«trace» LMash v1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;dashPattern=1 3;strokeColor=#808080;fontColor=#555555;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="ctx-1" source="ctx-edge" target="ctx-protocol">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx-legend" value="&lt;b&gt;Условные обозначения&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;color:#1F3A5F&quot;&gt;▭ белый блок&lt;/span&gt; — компонент, разрабатывает команда&lt;br&gt;&lt;span style=&quot;color:#808080&quot;&gt;▭ серый блок&lt;/span&gt; — внешняя система, платформа или библиотека&lt;br&gt;&lt;span style=&quot;color:#1F3A5F&quot;&gt;- - -&amp;gt;&lt;/span&gt; — зависимость «use»: источник вызывает интерфейс компонента, на который указывает стрелка&lt;br&gt;&lt;span style=&quot;color:#8A4B08&quot;&gt;——&amp;gt;&lt;/span&gt; — сетевое взаимодействие между процессами (протокол на подписи)&lt;br&gt;&lt;span style=&quot;color:#808080&quot;&gt;· · · &amp;gt;&lt;/span&gt; — «trace»: реализация соответствует контракту&lt;br&gt;○ «…» — предоставляемый интерфейс компонента&lt;br&gt;&lt;i&gt;* формат передачи конфигурации в LMash v1 не определён — открытый вопрос&lt;/i&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#FFFDF0;strokeColor=#B8A96A;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=10;" vertex="1" parent="ctx-1">
+          <mxGeometry x="20" y="600" width="300" height="190" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="mod" name="2. Модули приложения">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1150" math="0" shadow="0">
+      <root>
+        <mxCell id="mod-0" />
+        <mxCell id="mod-1" parent="mod-0" />
+        <mxCell id="mod-boundary" value="«system» Мобильное приложение (Android, один APK)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#1F3A5F;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=10;spacingTop=4;fontSize=13;fontStyle=1;fontColor=#1F3A5F;" vertex="1" parent="mod-1">
+          <mxGeometry x="40" y="20" width="1350" height="930" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-b1" value="Представление (MVVM)" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=2;fontSize=11;fontStyle=3;fontColor=#1F3A5F;fillColor=#EAF1FA;" vertex="1" parent="mod-1">
+          <mxGeometry x="60" y="50" width="1310" height="262" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-b2" value="Предметная логика" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=2;fontSize=11;fontStyle=3;fontColor=#1F3A5F;fillColor=#EEF6EC;" vertex="1" parent="mod-1">
+          <mxGeometry x="60" y="322" width="1310" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-b3" value="Данные и связь" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=2;fontSize=11;fontStyle=3;fontColor=#1F3A5F;fillColor=#FCF3E7;" vertex="1" parent="mod-1">
+          <mxGeometry x="60" y="512" width="1310" height="425" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-ui" value="&lt;div style=&quot;font-size:9px;color:#444&quot;&gt;«component»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Пользовательский интерфейс&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;Карта · Состав · Иерархия · Устройства · Сеть&lt;/div&gt;&lt;div style=&quot;font-size:9px;color:#666;font-family:Menlo,monospace;margin-top:4px&quot;&gt;ui/*Fragment, ui/widget&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;strokeWidth=1.5;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="500" y="82" width="440" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-ui-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;" vertex="1" parent="mod-1">
+          <mxGeometry x="916" y="89" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-vm" value="&lt;div style=&quot;font-size:9px;color:#444&quot;&gt;«component»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Состояние экранов&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;○ Состояние и действия экранов&lt;/div&gt;&lt;div style=&quot;font-size:9px;color:#666;font-family:Menlo,monospace;margin-top:4px&quot;&gt;ui/TelemetryViewModel&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;strokeWidth=1.5;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="500" y="207" width="440" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-vm-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;" vertex="1" parent="mod-1">
+          <mxGeometry x="916" y="214" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-mon" value="&lt;div style=&quot;font-size:9px;color:#444&quot;&gt;«component»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Мониторинг и статусы&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;○ Оценка актуальности&lt;/div&gt;&lt;div style=&quot;font-size:9px;color:#666;font-family:Menlo,monospace;margin-top:4px&quot;&gt;domain/*StatusEvaluator&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;strokeWidth=1.5;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="80" y="360" width="210" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-mon-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;" vertex="1" parent="mod-1">
+          <mxGeometry x="266" y="367" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-reg" value="&lt;div style=&quot;font-size:9px;color:#444&quot;&gt;«component»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Реестр сети&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;○ Сети, устройства, привязки&lt;/div&gt;&lt;div style=&quot;font-size:9px;color:#666;font-family:Menlo,monospace;margin-top:4px&quot;&gt;сейчас в TelemetryRepository&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;strokeWidth=1.5;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="330" y="360" width="220" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-reg-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;" vertex="1" parent="mod-1">
+          <mxGeometry x="526" y="367" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-cmd" value="&lt;div style=&quot;font-size:9px;color:#444&quot;&gt;«component»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Команды&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;○ Отправка команд&lt;/div&gt;&lt;div style=&quot;font-size:9px;color:#666;font-family:Menlo,monospace;margin-top:4px&quot;&gt;domain/TacticalCommand&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;strokeWidth=1.5;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="580" y="360" width="210" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-cmd-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;" vertex="1" parent="mod-1">
+          <mxGeometry x="766" y="367" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-hier" value="&lt;div style=&quot;font-size:9px;color:#444&quot;&gt;«component»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Иерархия и доступ&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;○ Иерархия и права&lt;/div&gt;&lt;div style=&quot;font-size:9px;color:#666;font-family:Menlo,monospace;margin-top:4px&quot;&gt;domain/UnitHierarchyManager,&lt;br&gt;domain/network/MqttTopicBuilder&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;strokeWidth=1.5;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="860" y="360" width="210" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-hier-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;" vertex="1" parent="mod-1">
+          <mxGeometry x="1046" y="367" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-cfg" value="&lt;div style=&quot;font-size:9px;color:#444&quot;&gt;«component»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Конфигурация устройств&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;○ Версии конфигурации&lt;/div&gt;&lt;div style=&quot;font-size:9px;color:#666;font-family:Menlo,monospace;margin-top:4px&quot;&gt;data/model/DeviceConfigModel&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;strokeWidth=1.5;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="1140" y="360" width="210" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-cfg-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;" vertex="1" parent="mod-1">
+          <mxGeometry x="1326" y="367" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-crypto" value="&lt;div style=&quot;font-size:9px;color:#444&quot;&gt;«component»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Криптография&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;○ Шифрование конверта&lt;/div&gt;&lt;div style=&quot;font-size:9px;color:#666;font-family:Menlo,monospace;margin-top:4px&quot;&gt;security/KeyStoreManager&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;strokeWidth=1.5;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="80" y="580" width="190" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-crypto-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;" vertex="1" parent="mod-1">
+          <mxGeometry x="246" y="587" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-proto" value="&lt;div style=&quot;font-size:9px;color:#444&quot;&gt;«component»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Протокол LMash&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;○ Кодек LMash v1&lt;/div&gt;&lt;div style=&quot;font-size:9px;color:#666;font-family:Menlo,monospace;margin-top:4px&quot;&gt;data/model/LMashPayload&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;strokeWidth=1.5;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="300" y="580" width="190" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-proto-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;" vertex="1" parent="mod-1">
+          <mxGeometry x="466" y="587" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-msg" value="&lt;div style=&quot;font-size:9px;color:#444&quot;&gt;«component»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Обмен сообщениями&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;○ Приём и отправка пакетов · ○ Диагностика&lt;/div&gt;&lt;div style=&quot;font-size:9px;color:#666;font-family:Menlo,monospace;margin-top:4px&quot;&gt;сейчас в transport/*Manager&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;strokeWidth=1.5;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="530" y="580" width="380" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-msg-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;" vertex="1" parent="mod-1">
+          <mxGeometry x="886" y="587" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-store" value="&lt;div style=&quot;font-size:9px;color:#444&quot;&gt;«component»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Локальное хранилище&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;○ Данные мультисети&lt;/div&gt;&lt;div style=&quot;font-size:9px;color:#666;font-family:Menlo,monospace;margin-top:4px&quot;&gt;data/TelemetryRepository, data/local/*Dao&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;strokeWidth=1.5;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="970" y="580" width="380" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-store-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;" vertex="1" parent="mod-1">
+          <mxGeometry x="1326" y="587" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-mqtt" value="&lt;div style=&quot;font-size:9px;color:#444&quot;&gt;«component»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Транспорт MQTT&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;○ Канал MQTT&lt;/div&gt;&lt;div style=&quot;font-size:9px;color:#666;font-family:Menlo,monospace;margin-top:4px&quot;&gt;transport/&lt;br&gt;MqttTransportManager&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;strokeWidth=1.5;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="530" y="790" width="180" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-mqtt-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;" vertex="1" parent="mod-1">
+          <mxGeometry x="686" y="797" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-direct" value="&lt;div style=&quot;font-size:9px;color:#444&quot;&gt;«component»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Прямое подключение&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;○ Прямой канал&lt;/div&gt;&lt;div style=&quot;font-size:9px;color:#666;font-family:Menlo,monospace;margin-top:4px&quot;&gt;transport/&lt;br&gt;DirectConnectionManager&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;strokeWidth=1.5;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="730" y="790" width="180" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-direct-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#FFFFFF;strokeColor=#1F3A5F;" vertex="1" parent="mod-1">
+          <mxGeometry x="886" y="797" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-db" value="«database»&lt;br&gt;&lt;b&gt;БД приложения&lt;/b&gt;&lt;br&gt;(Room / SQLite)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFFFFF;strokeColor=#1F3A5F;strokeWidth=1.5;fontSize=11;" vertex="1" parent="mod-1">
+          <mxGeometry x="1060" y="790" width="200" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-maplibre" value="&lt;div style=&quot;font-size:9px;color:#555&quot;&gt;«library»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;MapLibre Native&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;растровые тайлы в assets&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F2F2F2;strokeColor=#808080;strokeWidth=1.2;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="1440" y="85" width="220" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-maplibre-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#F2F2F2;strokeColor=#808080;" vertex="1" parent="mod-1">
+          <mxGeometry x="1636" y="92" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-keystore" value="&lt;div style=&quot;font-size:9px;color:#555&quot;&gt;«platform»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Android Keystore&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F2F2F2;strokeColor=#808080;strokeWidth=1.2;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="80" y="1010" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-keystore-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#F2F2F2;strokeColor=#808080;" vertex="1" parent="mod-1">
+          <mxGeometry x="246" y="1017" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-protocol" value="&lt;div style=&quot;font-size:9px;color:#555&quot;&gt;«contract»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Репозиторий protocol&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;spec/lmash-v1.md,&lt;br&gt;vectors/*.json&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F2F2F2;strokeColor=#808080;strokeWidth=1.2;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="300" y="1010" width="190" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-protocol-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#F2F2F2;strokeColor=#808080;" vertex="1" parent="mod-1">
+          <mxGeometry x="466" y="1017" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-broker" value="&lt;div style=&quot;font-size:9px;color:#555&quot;&gt;«external»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;MQTT-брокер&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;Mosquitto, TLS + ACL&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F2F2F2;strokeColor=#808080;strokeWidth=1.2;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="530" y="1010" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-broker-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#F2F2F2;strokeColor=#808080;" vertex="1" parent="mod-1">
+          <mxGeometry x="686" y="1017" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-edge" value="&lt;div style=&quot;font-size:9px;color:#555&quot;&gt;«external»&lt;/div&gt;&lt;div style=&quot;font-size:12px;font-weight:bold;margin-top:1px&quot;&gt;Edge-устройство&lt;/div&gt;&lt;div style=&quot;font-size:10px;margin-top:5px&quot;&gt;RouterD (эмулятор)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F2F2F2;strokeColor=#808080;strokeWidth=1.2;verticalAlign=top;align=center;spacingTop=2;spacingLeft=4;spacingRight=4;fontSize=11;fontFamily=Helvetica;" vertex="1" parent="mod-1">
+          <mxGeometry x="730" y="1010" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-edge-icon" value="" style="shape=module;jettyWidth=6;jettyHeight=3;html=1;fillColor=#F2F2F2;strokeColor=#808080;" vertex="1" parent="mod-1">
+          <mxGeometry x="886" y="1017" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-e1" value="действия пользователя;&lt;br&gt;подписка на состояние" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-ui" target="mod-vm">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="70" y="0" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mod-e2" value="статусы для экранов" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0;exitY=0.2353;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-vm" target="mod-mon">
+          <mxGeometry relative="1" as="geometry" x="-0.3">
+            <Array as="points">
+              <mxPoint x="185" y="227" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mod-e3" value="сети, устройства" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0;exitY=0.7647;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-vm" target="mod-reg">
+          <mxGeometry relative="1" as="geometry" x="0.55">
+            <Array as="points">
+              <mxPoint x="435" y="272" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mod-e8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.1477;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0921;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-vm" target="mod-msg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-e5" value="команда&lt;br&gt;получателю" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.4205;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-vm" target="mod-cmd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-e4" value="правка дерева" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.9545;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.2857;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-vm" target="mod-hier">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-e7" value="телеметрия и история&lt;br&gt;активной сети" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=1;exitY=0.2353;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.3333;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-vm" target="mod-store">
+          <mxGeometry relative="1" as="geometry" x="-0.55">
+            <Array as="points">
+              <mxPoint x="1372" y="227" />
+              <mxPoint x="1372" y="615" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mod-e6" value="настройки устройства" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=1;exitY=0.7647;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-vm" target="mod-cfg">
+          <mxGeometry relative="1" as="geometry" x="-0.2">
+            <Array as="points">
+              <mxPoint x="1245" y="272" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mod-e9" value="право,&lt;br&gt;адрес" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=1;exitY=0.3478;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.3478;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-cmd" target="mod-hier">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-e12" value="получатели,&lt;br&gt;топики" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0;exitY=0.6957;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.6957;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-cfg" target="mod-hier">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-e10" value="отправка&lt;br&gt;COMMAND" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.4079;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-cmd" target="mod-msg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-e11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.8571;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0658;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-cmd" target="mod-store">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="530" />
+              <mxPoint x="995" y="530" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mod-e16" value="узлы&lt;br&gt;дерева" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.8095;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.1579;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-hier" target="mod-store">
+          <mxGeometry relative="1" as="geometry" x="-0.1" />
+        </mxCell>
+        <mxCell id="mod-e14" value="версии&lt;br&gt;и статусы" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.7237;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-cfg" target="mod-store">
+          <mxGeometry relative="1" as="geometry" x="0.1" />
+        </mxCell>
+        <mxCell id="mod-e13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.1429;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.9211;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-cfg" target="mod-msg">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1170" y="560" />
+              <mxPoint x="880" y="560" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mod-e15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.3182;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0211;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-reg" target="mod-store">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="400" y="518" />
+              <mxPoint x="978" y="518" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mod-e17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.0395;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.9773;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-msg" target="mod-reg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-e18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0;exitY=0.4952;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.4952;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-msg" target="mod-proto">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-e19" value="(рас)шифрование" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.0526;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.7895;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-msg" target="mod-crypto">
+          <mxGeometry relative="1" as="geometry" x="0.0">
+            <Array as="points">
+              <mxPoint x="550" y="742" />
+              <mxPoint x="230" y="742" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mod-e20" value="запись&lt;br&gt;телеметрии" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=1;exitY=0.4952;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.4952;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-msg" target="mod-store">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-e21" value="публикация /&lt;br&gt;входящие" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.2368;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-msg" target="mod-mqtt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-e22" value="отправка /&lt;br&gt;входящие" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.7632;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-msg" target="mod-direct">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-e24" value="Room DAO" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-store" target="mod-db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-e25" value="ключи" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=0.2632;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.2632;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-crypto" target="mod-keystore">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-e26" value="отрисовка карты" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;strokeColor=#1F3A5F;fontColor=#1F3A5F;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-ui" target="mod-maplibre">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-e27" value="«trace»" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;dashed=1;dashPattern=1 3;strokeColor=#808080;fontColor=#555555;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-proto" target="mod-protocol">
+          <mxGeometry relative="1" as="geometry" x="0.55" />
+        </mxCell>
+        <mxCell id="mod-e28" value="MQTT / TLS" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;strokeWidth=1.6;strokeColor=#8A4B08;fontColor=#8A4B08;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-mqtt" target="mod-broker">
+          <mxGeometry relative="1" as="geometry" x="0.55" />
+        </mxCell>
+        <mxCell id="mod-e29" value="TCP, Wi-Fi" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=9;fontSize=9;labelBackgroundColor=#FFFFFF;strokeWidth=1.6;strokeColor=#8A4B08;fontColor=#8A4B08;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="mod-1" source="mod-direct" target="mod-edge">
+          <mxGeometry relative="1" as="geometry" x="0.55" />
+        </mxCell>
+        <mxCell id="mod-lbl8" value="режим связи,&lt;br&gt;подписки, диагностика" style="text;html=1;fontSize=9;fontColor=#1F3A5F;align=left;verticalAlign=top;labelBackgroundColor=#FFFFFF;" vertex="1" parent="mod-1">
+          <mxGeometry x="569" y="532" width="110" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-lbl17" value="проверка&lt;br&gt;привязки" style="text;html=1;fontSize=9;fontColor=#1F3A5F;align=right;verticalAlign=top;labelBackgroundColor=#FFFFFF;" vertex="1" parent="mod-1">
+          <mxGeometry x="480" y="532" width="62" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-lbl15" value="устройства,&lt;br&gt;привязки" style="text;html=1;fontSize=9;fontColor=#1F3A5F;align=right;verticalAlign=top;labelBackgroundColor=#FFFFFF;" vertex="1" parent="mod-1">
+          <mxGeometry x="330" y="480" width="66" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-lbl11" value="журнал команд" style="text;html=1;fontSize=9;fontColor=#1F3A5F;align=left;verticalAlign=top;labelBackgroundColor=#FFFFFF;" vertex="1" parent="mod-1">
+          <mxGeometry x="800" y="533" width="90" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-lbl13" value="передача версии*" style="text;html=1;fontSize=9;fontColor=#1F3A5F;align=left;verticalAlign=top;labelBackgroundColor=#FFFFFF;" vertex="1" parent="mod-1">
+          <mxGeometry x="1060" y="562" width="100" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-lbl18" value="кодек" style="text;html=1;fontSize=9;fontColor=#1F3A5F;align=center;" vertex="1" parent="mod-1">
+          <mxGeometry x="490" y="612" width="40" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="mod-legend" value="&lt;b&gt;Условные обозначения&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;color:#1F3A5F&quot;&gt;▭ белый блок&lt;/span&gt; — компонент, разрабатывает команда&lt;br&gt;&lt;span style=&quot;color:#808080&quot;&gt;▭ серый блок&lt;/span&gt; — внешняя система, платформа или библиотека&lt;br&gt;&lt;span style=&quot;color:#1F3A5F&quot;&gt;- - -&amp;gt;&lt;/span&gt; — зависимость «use»: источник вызывает интерфейс компонента, на который указывает стрелка&lt;br&gt;&lt;span style=&quot;color:#8A4B08&quot;&gt;——&amp;gt;&lt;/span&gt; — сетевое взаимодействие между процессами (протокол на подписи)&lt;br&gt;&lt;span style=&quot;color:#808080&quot;&gt;· · · &amp;gt;&lt;/span&gt; — «trace»: реализация соответствует контракту&lt;br&gt;○ «…» — предоставляемый интерфейс компонента&lt;br&gt;&lt;i&gt;* формат передачи конфигурации на устройство в LMash v1 не определён — открытый вопрос (см. текст)&lt;/i&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#FFFDF0;strokeColor=#B8A96A;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=10;" vertex="1" parent="mod-1">
+          <mxGeometry x="1440" y="600" width="300" height="190" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
