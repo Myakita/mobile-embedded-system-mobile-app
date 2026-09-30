@@ -34,12 +34,28 @@ git submodule update --init --recursive
 ./gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug
 ```
 
+Для инструментальных smoke-тестов запустите Android-эмулятор или подключите
+устройство с API 26+ и выполните:
+
+```bash
+./gradlew --no-daemon connectedDebugAndroidTest
+```
+
+CI запускает эти тесты на эмуляторе API 35 при каждом pull request и push в
+`main`. Тесты используют встроенный имитатор телеметрии и не требуют MQTT-брокера.
+
 После выполнения результаты находятся здесь:
 
 - debug APK: `app/build/outputs/apk/debug/app-debug.apk`;
 - JUnit XML: `app/build/test-results/testDebugUnitTest/`;
 - HTML-отчёт тестов: `app/build/reports/tests/testDebugUnitTest/index.html`;
-- отчёт Android Lint: `app/build/reports/lint-results-debug.html`.
+- отчёт Android Lint: `app/build/reports/lint-results-debug.html`;
+- XML инструментальных тестов: `app/build/outputs/androidTest-results/connected/`;
+- HTML инструментальных тестов: `app/build/reports/androidTests/connected/`.
+
+В GitHub Actions доступны артефакты `debug-apk`, `android-reports` и
+`instrumented-test-reports` (14 дней). Обе job обязательны: провал инструментальных
+тестов делает весь workflow неуспешным.
 
 ## Диагностика ошибок
 

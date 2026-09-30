@@ -2,11 +2,7 @@ name: Android CI
 
 on:
   pull_request:
-    branches:
-      - main
   push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
@@ -72,4 +68,72 @@ jobs:
             app/build/test-results/testDebugUnitTest/**
             app/build/reports/tests/testDebugUnitTest/**
             app/build/reports/lint-results-debug.*
+          retention-days: 14
+
+  instrumented-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CI: true
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: >-
+            platform-tools
+            platforms;android-37.0
+            build-tools;37.0.0
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run instrumented smoke tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: ./gradlew --no-daemon --stacktrace connectedDebugAndroidTest
+
+      - name: Verify instrumented test results
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          reports = list(Path('app/build/outputs/androidTest-results/connected').rglob('*.xml'))
+          count = sum(int(ET.parse(path).getroot().attrib.get('tests', 0)) for path in reports)
+          if count < 2:
+              raise SystemExit(f'Expected at least 2 instrumented tests, found {count}')
+          print(f'Instrumented tests reported: {count}')
+          PY
+
+      - name: Upload instrumented test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: instrumented-test-reports
+          path: |
+            app/build/outputs/androidTest-results/connected/**
+            app/build/reports/androidTests/connected/**
+          if-no-files-found: warn
           retention-days: 14
