@@ -435,6 +435,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     public void onMapReady(@NonNull MapLibreMap map) {
         this.maplibreMap = map;
 
+        // A restored MapView may still own annotations from the previous view.
+        // Reset the SDK registry before rebuilding our marker and polyline maps.
+        map.removeAnnotations();
         tacticalMarkers.clear();
         waypointMarkers.clear();
         tacticalTracks.clear();
@@ -1081,6 +1084,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
     @Override
     public void onDestroyView() {
+        stalenessHandler.removeCallbacks(stalenessRunnable);
+        if (maplibreMap != null) {
+            maplibreMap.removeAnnotations();
+            maplibreMap = null;
+        }
         super.onDestroyView();
         tacticalMarkers.clear();
         waypointMarkers.clear();
