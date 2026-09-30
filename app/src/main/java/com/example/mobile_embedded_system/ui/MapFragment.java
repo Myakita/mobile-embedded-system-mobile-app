@@ -147,11 +147,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     };
 
     private final Handler stalenessHandler = new Handler(Looper.getMainLooper());
+    private boolean stalenessActive;
     private final Runnable stalenessRunnable = new Runnable() {
         @Override
         public void run() {
+            if (!stalenessActive) return;
             checkPositionStaleness();
-            stalenessHandler.postDelayed(this, 1000L);
+            if (stalenessActive) {
+                stalenessHandler.postDelayed(this, 1000L);
+            }
         }
     };
 
@@ -1050,14 +1054,17 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     public void onResume() {
         super.onResume();
         mapView.onResume();
+        stalenessActive = true;
+        stalenessHandler.removeCallbacks(stalenessRunnable);
         stalenessHandler.post(stalenessRunnable);
     }
 
     @Override
     public void onPause() {
+        stalenessActive = false;
+        stalenessHandler.removeCallbacks(stalenessRunnable);
         super.onPause();
         mapView.onPause();
-        stalenessHandler.removeCallbacks(stalenessRunnable);
     }
 
     @Override
@@ -1084,6 +1091,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
     @Override
     public void onDestroyView() {
+        stalenessActive = false;
         stalenessHandler.removeCallbacks(stalenessRunnable);
         if (maplibreMap != null) {
             maplibreMap.removeAnnotations();
@@ -1211,6 +1219,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void checkPositionStaleness() {
+        if (maplibreMap == null) return;
         for (TelemetryEntity entity : squadLatestData.values()) {
             updateUnitMarker(entity);
         }
