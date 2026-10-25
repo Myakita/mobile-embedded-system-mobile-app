@@ -83,6 +83,15 @@ public class MqttTransportManager {
      * Асинхронное подключение к брокеру телеметрии.
      */
     public synchronized void connect(String brokerUrl, String clientId, ConnectionCallback callback) {
+        connect(brokerUrl, clientId, null, callback);
+    }
+
+    /**
+     * То же, но для брокера со своим CA и/или логином (тестовый стенд, {@link StandBrokerConfig}).
+     * {@code security == null} даёт прежнее поведение.
+     */
+    public synchronized void connect(String brokerUrl, String clientId, BrokerSecurity security,
+                                     ConnectionCallback callback) {
         if (mqttClient != null && mqttClient.isConnected()) {
             if (callback != null) callback.onConnected();
             return;
@@ -113,6 +122,9 @@ public class MqttTransportManager {
                     } catch (Exception sslEx) {
                         Log.e(TAG, "Ошибка настройки TLS сокета", sslEx);
                     }
+                }
+                if (security != null) {
+                    security.applyTo(options);
                 }
 
                 mqttClient.setCallback(new MqttCallbackExtended() {

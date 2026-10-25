@@ -49,13 +49,16 @@ import com.example.mobile_embedded_system.domain.TacticalRangeRingGenerator;
 import com.example.mobile_embedded_system.domain.TacticalStatusEvaluator;
 import com.example.mobile_embedded_system.domain.TacticalWaypointManager;
 import com.example.mobile_embedded_system.domain.Waypoint;
+import com.example.mobile_embedded_system.transport.StandBrokerConfig;
 import com.example.mobile_embedded_system.ui.TelemetryViewModel;
 
 
+import android.util.Log;
 import android.widget.Toast;
 import com.example.mobile_embedded_system.domain.GpxTrackSerializer;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 
@@ -115,7 +118,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private boolean isExporting = false;
     private long activeUserId = 1001L;
     private Long currentAlertUserId = null;
+    private static final String TAG = "MapFragment";
     private boolean isMqttMode = false;
+    private StandBrokerConfig standBroker = null;
     private boolean isTrackUp = false;
 
     private TextView btnMapOrientation;
@@ -262,12 +267,18 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         textLinkStatus.setOnClickListener(v -> {
             isMqttMode = !isMqttMode;
             if (isMqttMode) {
-                String clientId = "unit_terminal_" + System.currentTimeMillis();
-                viewModel.startMqttMode("tcp://broker.hivemq.com:1883", clientId);
+                startMqtt();
             } else {
                 viewModel.startMockMode();
             }
         });
+
+        // Тестовый стенд: если рядом лежит конфигурация брокера, сразу включаем MQTT с ней.
+        standBroker = loadStandBroker();
+        if (standBroker != null) {
+            isMqttMode = true;
+            startMqtt();
+        }
 
         containerUnitButtons = requireView().findViewById(R.id.containerUnitButtons);
 
@@ -280,6 +291,33 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
         mapView = requireView().findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
+    }
+
+    private void startMqtt() {
+        String clientId = "unit_terminal_" + System.currentTimeMillis();
+        if (standBroker != null) {
+            viewModel.startMqttMode(standBroker.getBrokerUrl(), clientId, standBroker.getSecurity());
+        } else {
+            viewModel.startMqttMode("tcp://broker.hivemq.com:1883", clientId);
+        }
+    }
+
+    /**
+     * Брокер тестового стенда из каталога приложения; null на обычном устройстве. Если файлы
+     * есть, но неверны, автозапуск MQTT не происходит: стенд не должен сам уйти на публичный брокер.
+     */
+    private StandBrokerConfig loadStandBroker() {
+        File filesDir = requireContext().getExternalFilesDir(null);
+        if (filesDir == null) {
+            return null;
+        }
+        File dir = new File(filesDir, StandBrokerConfig.DIR_NAME);
+        try {
+            return StandBrokerConfig.load(dir);
+        } catch (IOException | IllegalArgumentException e) {
+            Log.e(TAG, "Конфигурация брокера стенда в " + dir + " неверна, MQTT не запускаем", e);
+            return null;
+        }
     }
 
     private void setupSquadButtons() {

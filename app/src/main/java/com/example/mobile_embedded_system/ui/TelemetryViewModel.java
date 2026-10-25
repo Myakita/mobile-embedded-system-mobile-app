@@ -26,6 +26,7 @@ import com.example.mobile_embedded_system.domain.GpxTrackSerializer;
 import com.example.mobile_embedded_system.domain.HierarchyNode;
 import com.example.mobile_embedded_system.domain.KmlTrackSerializer;
 import com.example.mobile_embedded_system.security.KeyStoreManager;
+import com.example.mobile_embedded_system.transport.BrokerSecurity;
 import com.example.mobile_embedded_system.transport.DirectConnectionManager;
 import com.example.mobile_embedded_system.transport.MqttTransportManager;
 import com.example.mobile_embedded_system.domain.TacticalCommand;
@@ -269,11 +270,15 @@ public class TelemetryViewModel extends AndroidViewModel {
     }
 
     public void startMqttMode(String brokerUrl, String clientId) {
+        startMqttMode(brokerUrl, clientId, null);
+    }
+
+    public void startMqttMode(String brokerUrl, String clientId, BrokerSecurity security) {
         mockGenerator.stop();
         directTransport.disconnect();
         connectionState.postValue(ConnectionState.CONNECTING);
 
-        mqttTransport.connect(brokerUrl, clientId, new MqttTransportManager.ConnectionCallback() {
+        mqttTransport.connect(brokerUrl, clientId, security, new MqttTransportManager.ConnectionCallback() {
             @Override
             public void onConnected() {
                 connectionState.postValue(ConnectionState.CONNECTED);
