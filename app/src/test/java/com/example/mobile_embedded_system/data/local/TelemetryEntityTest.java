@@ -58,4 +58,49 @@ public class TelemetryEntityTest {
         // Метка времени приема
         assertTrue(entity.receivedAtMs >= beforeConversionMs);
     }
+
+    @Test
+    public void defaultNetworkIsMeshA() {
+        assertEquals("mesh-a", new TelemetryEntity().networkId);
+    }
+
+    @Test
+    public void negativeCoordinatesAndTemperatureAreConverted() {
+        LMashPayload p = new LMashPayload();
+        p.setLatitudeE7(-335000000);
+        p.setLongitudeE7(-702500000);
+        p.setTemperatureX100((short) -1050);
+        TelemetryEntity e = TelemetryEntity.fromPayload(p);
+        assertEquals(-33.5, e.latitude, 1e-9);
+        assertEquals(-70.25, e.longitude, 1e-9);
+        assertEquals(-10.5, e.temperatureCelsius, 1e-9);
+    }
+
+    @Test
+    public void unsignedLimitsStayPositive() {
+        LMashPayload p = new LMashPayload();
+        p.setSequence(4294967295L);
+        p.setTimestamp(4294967295L);
+        p.setPulseBpm(65535);
+        TelemetryEntity e = TelemetryEntity.fromPayload(p);
+        assertEquals(4294967295L, e.sequence);
+        assertEquals(4294967295L, e.timestamp);
+        assertEquals(65535, e.pulseBpm);
+    }
+
+    @Test
+    public void zeroPositionPayloadKeepsZeroQualityAndCoordinates() {
+        TelemetryEntity e = TelemetryEntity.fromPayload(new LMashPayload());
+        assertEquals(0, e.positionQuality);
+        assertEquals(0.0, e.latitude, 0.0);
+        assertEquals(0.0, e.longitude, 0.0);
+    }
+
+    @Test
+    public void entityFromParsedWireBytesKeepsDedupKey() {
+        LMashPayload p = LMashPayload.createCommand(102L, 1726000050L, 430572065L, 1001L, 2055410180L, LMashPayload.CMD_RETURN);
+        TelemetryEntity e = TelemetryEntity.fromPayload(LMashPayload.fromBytes(p.toBytes()));
+        assertEquals(430572065L, e.deviceSerial);
+        assertEquals(102L, e.sequence);
+    }
 }
