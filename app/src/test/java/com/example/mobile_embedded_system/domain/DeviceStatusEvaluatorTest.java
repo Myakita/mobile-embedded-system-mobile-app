@@ -28,4 +28,22 @@ public class DeviceStatusEvaluatorTest {
         assertEquals(DeviceStatusEvaluator.GnssState.NO_FIX, DeviceStatusEvaluator.evaluateGnss(0));
         assertEquals(DeviceStatusEvaluator.GnssState.NO_FIX, DeviceStatusEvaluator.evaluateGnss(-1));
     }
+
+    @Test
+    public void batteryJustAboveBoundaries() {
+        assertEquals(DeviceStatusEvaluator.BatteryState.WARNING, DeviceStatusEvaluator.evaluateBattery(16));
+        assertEquals(DeviceStatusEvaluator.BatteryState.NORMAL, DeviceStatusEvaluator.evaluateBattery(31));
+    }
+
+    @Test
+    public void batteryOutOfRangeValues() {
+        assertEquals(DeviceStatusEvaluator.BatteryState.NORMAL, DeviceStatusEvaluator.evaluateBattery(101));
+        assertEquals(DeviceStatusEvaluator.BatteryState.CRITICAL, DeviceStatusEvaluator.evaluateBattery(-5));
+    }
+
+    @Test
+    public void gnssOutOfRangeValues() {
+        assertEquals(DeviceStatusEvaluator.GnssState.FIX_3D, DeviceStatusEvaluator.evaluateGnss(255));
+        assertEquals(DeviceStatusEvaluator.GnssState.NO_FIX, DeviceStatusEvaluator.evaluateGnss(Integer.MIN_VALUE));
+    }
 }

@@ -63,4 +63,108 @@ public class SquadAlertManagerTest {
         alertManager.processTelemetry(entity);
         assertFalse(alertManager.hasActiveCriticalAlert());
     }
+
+    private static TelemetryEntity soldier(long id, int pulse, double temp) {
+        TelemetryEntity e = new TelemetryEntity();
+        e.userId = id;
+        e.pulseBpm = pulse;
+        e.temperatureCelsius = temp;
+        e.receivedAtMs = 5555L;
+        return e;
+    }
+
+    @Test
+    public void nullTelemetryIsIgnored() {
+        assertNull(alertManager.processTelemetry(null));
+        assertFalse(alertManager.hasActiveCriticalAlert());
+    }
+
+    @Test
+    public void warningLevelDoesNotCreateAlert() {
+        assertNull(alertManager.processTelemetry(soldier(1001L, 100, 37.5)));
+        assertFalse(alertManager.hasActiveCriticalAlert());
+    }
+
+    @Test
+    public void bradycardiaReasonText() {
+        SquadAlertManager.AlertInfo a = alertManager.processTelemetry(soldier(1001L, 40, 36.6));
+        assertNotNull(a);
+        assertEquals("БРАДИКАРДИЯ / ШОК (40 BPM)", a.reason);
+    }
+
+    @Test
+    public void tachycardiaReasonText() {
+        SquadAlertManager.AlertInfo a = alertManager.processTelemetry(soldier(1001L, 135, 36.6));
+        assertEquals("ТАХИКАРДИЯ (135 BPM)", a.reason);
+    }
+
+    @Test
+    public void hyperthermiaReasonTextUsesDotDecimal() {
+        SquadAlertManager.AlertInfo a = alertManager.processTelemetry(soldier(1001L, 80, 39.04));
+        assertEquals("ГИПЕРТЕРМИЯ (39.0 °C)", a.reason);
+    }
+
+    @Test
+    public void pulseReasonHasPriorityOverTemperature() {
+        SquadAlertManager.AlertInfo a = alertManager.processTelemetry(soldier(1001L, 130, 40.0));
+        assertTrue(a.reason.startsWith("ТАХИКАРДИЯ"));
+    }
+
+    @Test
+    public void firstCriticalIsNewAndRepeatIsNot() {
+        SquadAlertManager.AlertInfo first = alertManager.processTelemetry(soldier(1001L, 135, 36.6));
+        SquadAlertManager.AlertInfo second = alertManager.processTelemetry(soldier(1001L, 140, 36.6));
+        assertTrue(first.isNewAlert);
+        assertFalse(second.isNewAlert);
+    }
+
+    @Test
+    public void alertIsNewAgainAfterRecovery() {
+        alertManager.processTelemetry(soldier(1001L, 135, 36.6));
+        alertManager.processTelemetry(soldier(1001L, 70, 36.6));
+        SquadAlertManager.AlertInfo again = alertManager.processTelemetry(soldier(1001L, 135, 36.6));
+        assertTrue(again.isNewAlert);
+    }
+
+    @Test
+    public void warningBetweenCriticalsResetsNewFlag() {
+        alertManager.processTelemetry(soldier(1001L, 135, 36.6));
+        alertManager.processTelemetry(soldier(1001L, 100, 36.6)); // WARNING
+        assertTrue(alertManager.processTelemetry(soldier(1001L, 135, 36.6)).isNewAlert);
+    }
+
+    @Test
+    public void alertCarriesUserAndReceiveTime() {
+        SquadAlertManager.AlertInfo a = alertManager.processTelemetry(soldier(1003L, 135, 36.6));
+        assertEquals(1003L, a.userId);
+        assertEquals(5555L, a.timestampMs);
+    }
+
+    @Test
+    public void soldiersAreTrackedIndependently() {
+        assertTrue(alertManager.processTelemetry(soldier(1001L, 135, 36.6)).isNewAlert);
+        assertTrue(alertManager.processTelemetry(soldier(1002L, 135, 36.6)).isNewAlert);
+    }
+
+    @Test
+    public void activeAlertRemainsWhileAnotherSoldierIsCritical() {
+        alertManager.processTelemetry(soldier(1001L, 135, 36.6));
+        alertManager.processTelemetry(soldier(1002L, 135, 36.6));
+        alertManager.processTelemetry(soldier(1001L, 70, 36.6));
+        assertTrue(alertManager.hasActiveCriticalAlert());
+        alertManager.processTelemetry(soldier(1002L, 70, 36.6));
+        assertFalse(alertManager.hasActiveCriticalAlert());
+    }
+
+    @Test
+    public void alertInfoThreeArgConstructorMarksNew() {
+        SquadAlertManager.AlertInfo a = new SquadAlertManager.AlertInfo(7L, "x", 9L);
+        assertTrue(a.isNewAlert);
+        assertEquals(7L, a.userId);
+    }
+
+    @Test
+    public void noAlertsInitially() {
+        assertFalse(new SquadAlertManager().hasActiveCriticalAlert());
+    }
 }
